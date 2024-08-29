@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.20.0",
+    "@tensorflow/tfjs-node": "^4.20.0",
+    "axios": "^1.7.4",
+    "binance-api-node": "^0.12.7",
+    "binance-futures": "^1.4.4",
+    "brain.js": "^2.0.0-beta.24",
+    "openai": "^4.56.1",
+    "technicalindicators": "^3.1.0"
+  }
+}
