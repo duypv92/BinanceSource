@@ -241,7 +241,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
             type: 'MARKET', // Không thêm tham số 'price' cho lệnh MARKET
             quantity: roundedQuantity
         });
-        utils.customLog(`${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}`);
+        utils.customLog(`${utils.FgYellow} ${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}${utils.Reset}`);
         // console.log(`${side} Order Placed:`, order);
 
         // Đặt lệnh Stop Loss và Take Profit nếu cần
@@ -253,7 +253,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedStopLoss,
                 quantity: roundedQuantity
             });
-            utils.customLog(`Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}`);
+            utils.customLog(`${utils.FgYellow}Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}${utils.Reset}`);
             // console.log('Stop Loss Order Placed:', stopOrder);
         }
 
@@ -265,7 +265,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedTakeProfit,
                 quantity: roundedQuantity
             });
-            utils.customLog(`Take Profit Order Placed: id: ${takeProfitOrder.orderId}, time: ${takeProfitOrder.updateTime}`);
+            utils.customLog(`${utils.FgYellow}Take Profit Order Placed: id: ${takeProfitOrder.orderId}, time: ${takeProfitOrder.updateTime}${utils.Reset}`);
             // console.log('Take Profit Order Placed:', takeProfitOrder);
         }
     } catch (error) {
@@ -310,7 +310,8 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
                 utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-
+                // console.log(parseFloat(positionAmt) > 0);
+                utils.customLog(`New suggest action: ${utils.FgYellow}${currentAction}`);
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
                         isStop = true;
