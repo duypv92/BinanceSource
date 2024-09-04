@@ -107,8 +107,8 @@ const getMinimumNotional = async (symbol) => {
         const minNotionalFilter = symbolInfo.filters.find(f => f.filterType === 'MIN_NOTIONAL');
         if (minNotionalFilter) {
             // In ra thông tin để kiểm tra
-            utils.customLog('minNotionalFilter: ');
-            console.log(minNotionalFilter);
+            // utils.customLog('minNotionalFilter: ');
+            // console.log(minNotionalFilter);
             if (minNotionalFilter.minNotional == undefined) {
                 return parseFloat(minNotionalFilter.notional);
             }
@@ -355,7 +355,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                     quantity: quantity,
                 });
 
-                console.log(`Closed ${symbol} position: updateTime `, order.updateTime);
+                utils.customLog(`Closed ${symbol} position: updateTime ${order.updateTime}`);
             }
             utils.customLog('All positions closed.');
         }
@@ -477,9 +477,33 @@ const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus
     }
 };
 
+const getLastClosedPosition = async (symbol) => {
+    try {
+        // Lấy lịch sử giao dịch trên futures
+        const trades = await client.futuresUserTrades({ symbol: symbol, limit: 50 });
+
+        // Lọc ra những vị thế đã đóng
+        const closedTrades = trades.filter(trade => trade.realizedPnl !== '0');
+
+        if (closedTrades.length === 0) {
+            console.log('Không có vị thế nào đã đóng.');
+            return null;
+        }
+
+        // Lấy vị thế đã đóng gần nhất
+        const lastClosedTrade = closedTrades[closedTrades.length - 1];
+
+        //   console.log('Vị thế đã đóng gần nhất:', lastClosedTrade);
+        return lastClosedTrade;
+    } catch (error) {
+        console.error('Error fetching closed positions:', error);
+        return null;
+    }
+};
+
 module.exports = {
     client, getHistoricalData, getHistoricalFutures, getPrice,
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
-    getHistoricalDataCustomForAI, confirmMarketStatus
+    getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition
 };
