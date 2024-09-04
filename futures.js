@@ -69,9 +69,9 @@ const futuresTrade = async () => {
             return;
         }
     } else {
-        utils.customLog(`→ Could not retrieve ${asset} balance. => exit;`);
-        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
-        return;
+        utils.customLog(`→ Could not retrieve ${asset} balance. => use default quantity = 6.`);
+        // utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        // return;
     }
 
     // Thiết lập đòn bẩy Leverage

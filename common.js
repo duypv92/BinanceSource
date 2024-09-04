@@ -376,7 +376,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
         return isStop;
     } catch (error) {
         console.error('Error closing positions or cancelling orders:', error);
-        return false;
+        return true;
     }
 };
 
