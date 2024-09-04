@@ -43,13 +43,32 @@ const futuresTrade = async () => {
         utils.customLog("→ Stop renew futures requests => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
-    } 
+    }
 
     // If action is hold, doing nothing.
     if (marketStatus.action == "HOLD") {
         utils.customLog("→ Market's status is HOLD => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
+    }
+
+    // Check previous trade is lose or win
+    let lastClosedTrade = await common_func.getLastClosedPosition(symbol);
+    let realizedPnl = parseFloat(lastClosedTrade.realizedPnl);
+    // console.log(realizedPnl);
+    if (realizedPnl < 0) {
+        // Check time of last trade
+        let lastestTime = new Date(lastClosedTrade.time);
+        // console.log(lastestTime);
+        let diffMs = currentdate - lastestTime;
+        let diffMins = diffMs / 60000; // minutes
+        if (diffMins >= 31) {
+            utils.customLog("The Lastest trade is lose but time > 30 minutes => continue;");
+        } else {
+            utils.customLog("The Lastest trade is lose and not enough 30 minutes => exit;");
+            utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+            return;
+        }
     }
 
     var quantity = 6;

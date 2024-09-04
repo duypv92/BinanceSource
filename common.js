@@ -107,8 +107,8 @@ const getMinimumNotional = async (symbol) => {
         const minNotionalFilter = symbolInfo.filters.find(f => f.filterType === 'MIN_NOTIONAL');
         if (minNotionalFilter) {
             // In ra thông tin để kiểm tra
-            utils.customLog('minNotionalFilter: ');
-            console.log(minNotionalFilter);
+            // utils.customLog('minNotionalFilter: ');
+            // console.log(minNotionalFilter);
             if (minNotionalFilter.minNotional == undefined) {
                 return parseFloat(minNotionalFilter.notional);
             }
@@ -241,8 +241,8 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
             type: 'MARKET', // Không thêm tham số 'price' cho lệnh MARKET
             quantity: roundedQuantity
         });
-
-        console.log(`${side} Order Placed:`, order);
+        utils.customLog(`${utils.FgYellow} ${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}${utils.Reset}`);
+        // console.log(`${side} Order Placed:`, order);
 
         // Đặt lệnh Stop Loss và Take Profit nếu cần
         if (roundedStopLoss) {
@@ -253,7 +253,8 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedStopLoss,
                 quantity: roundedQuantity
             });
-            console.log('Stop Loss Order Placed:', stopOrder);
+            utils.customLog(`${utils.FgYellow}Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}${utils.Reset}`);
+            // console.log('Stop Loss Order Placed:', stopOrder);
         }
 
         if (roundedTakeProfit) {
@@ -264,7 +265,8 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedTakeProfit,
                 quantity: roundedQuantity
             });
-            console.log('Take Profit Order Placed:', takeProfitOrder);
+            utils.customLog(`${utils.FgYellow}Take Profit Order Placed: id: ${takeProfitOrder.orderId}, time: ${takeProfitOrder.updateTime}${utils.Reset}`);
+            // console.log('Take Profit Order Placed:', takeProfitOrder);
         }
     } catch (error) {
         console.error(`Error placing ${side} order:`, error);
@@ -308,7 +310,8 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
                 utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-
+                // console.log(parseFloat(positionAmt) > 0);
+                utils.customLog(`New suggest action: ${utils.FgYellow}${currentAction}`);
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
                         isStop = true;
@@ -352,7 +355,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                     quantity: quantity,
                 });
 
-                console.log(`Closed ${symbol} position: updateTime `, order.updateTime);
+                utils.customLog(`Closed ${symbol} position: updateTime ${order.updateTime}`);
             }
             utils.customLog('All positions closed.');
         }
@@ -474,9 +477,33 @@ const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus
     }
 };
 
+const getLastClosedPosition = async (symbol) => {
+    try {
+        // Lấy lịch sử giao dịch trên futures
+        const trades = await client.futuresUserTrades({ symbol: symbol, limit: 50 });
+
+        // Lọc ra những vị thế đã đóng
+        const closedTrades = trades.filter(trade => trade.realizedPnl !== '0');
+
+        if (closedTrades.length === 0) {
+            console.log('Không có vị thế nào đã đóng.');
+            return null;
+        }
+
+        // Lấy vị thế đã đóng gần nhất
+        const lastClosedTrade = closedTrades[closedTrades.length - 1];
+
+        //   console.log('Vị thế đã đóng gần nhất:', lastClosedTrade);
+        return lastClosedTrade;
+    } catch (error) {
+        console.error('Error fetching closed positions:', error);
+        return null;
+    }
+};
+
 module.exports = {
     client, getHistoricalData, getHistoricalFutures, getPrice,
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
-    getHistoricalDataCustomForAI, confirmMarketStatus
+    getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition
 };
