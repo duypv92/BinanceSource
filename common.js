@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Binance = require('binance-api-node').default;
-const { SMA, RSI, ATR } = require('technicalindicators');
+const { SMA, RSI, ATR, ADX } = require('technicalindicators');
 var utils = require('./utils');
 
 const client = Binance({
@@ -71,10 +71,13 @@ const getHistoricalData = async (symbol) => {
 // Hàm lấy dữ liệu lịch sử từ Binance Futures 
 const getHistoricalFutures = async (symbol) => {
     try {
-        const response = await axios.get(`https://fapi.binance.com/fapi/v1/klines`, {
-            params: { symbol: symbol.toUpperCase(), interval: '15m', limit: 20 }
+        // Lấy dữ liệu nến 15 phút với giới hạn 1 nến gần nhất
+        const candles = await client.futuresCandles({
+            symbol: symbol,
+            interval: '15m',
+            limit: 10 // Lấy cây nến gần nhất
         });
-        return response.data;
+        return candles;
     } catch (error) {
         console.error('Error fetching historical data:', error);
         return null;
@@ -241,7 +244,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
             type: 'MARKET', // Không thêm tham số 'price' cho lệnh MARKET
             quantity: roundedQuantity
         });
-        utils.customLog(`${utils.FgYellow} ${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}${utils.Reset}`);
+        utils.customLog(`${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}`);
         // console.log(`${side} Order Placed:`, order);
 
         // Đặt lệnh Stop Loss và Take Profit nếu cần
@@ -253,7 +256,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedStopLoss,
                 quantity: roundedQuantity
             });
-            utils.customLog(`${utils.FgYellow}Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}${utils.Reset}`);
+            utils.customLog(`Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}`);
             // console.log('Stop Loss Order Placed:', stopOrder);
         }
 
@@ -265,7 +268,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
                 stopPrice: roundedTakeProfit,
                 quantity: roundedQuantity
             });
-            utils.customLog(`${utils.FgYellow}Take Profit Order Placed: id: ${takeProfitOrder.orderId}, time: ${takeProfitOrder.updateTime}${utils.Reset}`);
+            utils.customLog(`Take Profit Order Placed: id: ${takeProfitOrder.orderId}, time: ${takeProfitOrder.updateTime}`);
             // console.log('Take Profit Order Placed:', takeProfitOrder);
         }
     } catch (error) {
@@ -288,7 +291,6 @@ const closeAllPositionsAndOrders = async (currentAction) => {
             utils.customLog('No open positions found.');
         } else {
             for (const position of openPositions) {
-
                 const { symbol, positionAmt, entryPrice, markPrice } = position;
                 // Tính toán lãi/lỗ chưa thực hiện nếu không có sẵn
                 let unrealizedProfit = parseFloat(position.unrealizedProfit);
@@ -315,32 +317,53 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
                         isStop = true;
-                        utils.customLog('Current position is BUY but new position is SELL => Stop loss as soon as posible');
+                        utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible`);
                     }
                 } else {
                     if (currentAction == 'BUY') {
                         isStop = true;
-                        utils.customLog('Current position is SELL but new position is BUY => Stop loss as soon as posible');
+                        utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible`);
                     }
                 }
                 if (isStop == false) {
                     if (unrealizedProfit < 0) {
-                        utils.customLog('=> Are losing money.....');
-                        isStop = false;
-                    }
-                    if (unrealizedProfit > closingFee) {
+                        utils.customLog('→ Are losing money...');
+                        // Check time of position is > 30 minutes or not
+                        let orderedTime = new Date(position.updateTime);
+                        let currentdate = new Date();
+                        let diffMs = currentdate - orderedTime;
+                        let diffMins = diffMs / 60000; // minutes
+                        if (diffMins >= 31) {   // If > 30 minutes
+                            utils.customLog("Checking ADX for define stop loss");
+                            let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
+                            if (newStopLoss != null) {
+                                // If market price have a large change => stop loss.
+                                isStop = true;
+                            } else {
+                                isStop = false;
+                            }
+                        } else {
+                            isStop = false;
+                        }
+                        // if (!isStop) {
+                            // utils.customLog('→ Keep hold current position.....');
+                        // }
+                    } else if (unrealizedProfit > closingFee) {
                         if (unrealizedProfit >= (closingFee * 1.5)) {
                             isStop = true;
-                            utils.customLog('=> Take profit');
+                            utils.customLog('→ Take profit');
                         } else {
-                            utils.customLog('=> Not enough profit, keep hold current position.....');
+                            utils.customLog('→ Not enough profit!!');
                         }
                     } else {
-                        utils.customLog('=> Keep hold current position.....');
+                        // utils.customLog('→ Keep hold current position.....');
                     }
                 }
 
-                if (isStop == false) return;
+                if (isStop == false) {
+                    utils.customLog('→ Keep hold current position.....');
+                    return;
+                }
 
                 const quantity = Math.abs(parseFloat(positionAmt));
                 const closingSide = parseFloat(positionAmt) > 0 ? 'SELL' : 'BUY';
@@ -501,9 +524,63 @@ const getLastClosedPosition = async (symbol) => {
     }
 };
 
+const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
+    try {
+        let position = parseFloat(_position) > 0 ? 'BUY' : 'SELL';
+        const data = await getHistoricalDataCustom(symbol, '15m');
+
+        if (data.length < 21) {
+            console.error('Not enough data to calculate ADX or Volume.');
+            return null;
+        }
+
+        const closePrices = data.map(d => d.close);
+        const highPrices = data.map(d => d.high);
+        const lowPrices = data.map(d => d.low);
+        const volumes = data.map(d => d.volume);
+
+        const adx = ADX.calculate({
+            period: 14,
+            close: closePrices,
+            high: highPrices,
+            low: lowPrices
+        });
+
+        const latestClose = closePrices[closePrices.length - 1];
+        const latestADX = adx[adx.length - 1];
+        const averageVolume = SMA.calculate({ period: 20, values: volumes });
+        const latestVolume = volumes[volumes.length - 1];
+
+        utils.customLog(`Latest ADX: ${latestADX.adx}`);
+        utils.customLog(`Latest Volume: ${latestVolume}, Average Volume: ${averageVolume[averageVolume.length - 1]}`);
+
+        let stopLoss = null;
+
+        // Điều chỉnh Stop Loss dựa trên vị thế
+        if (latestADX.adx > 25 && latestVolume > averageVolume[averageVolume.length - 1]) {
+            utils.customLog('Strong trend detected. Adjusting Stop Loss.');
+
+            if (position === 'BUY') {
+                // Nếu đang ở vị thế BUY, stop loss phải thấp hơn giá hiện tại
+                stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
+            } else if (position === 'SELL') {
+                // Nếu đang ở vị thế SELL, stop loss phải cao hơn giá hiện tại
+                stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
+            }
+            utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
+        }
+        return stopLoss;
+        // Có thể thêm logic đặt lệnh stop loss ở đây
+    } catch (error) {
+        console.error('Monitor Market And Adjust Stop Loss:', error);
+        return null;
+    }
+};
+
 module.exports = {
     client, getHistoricalData, getHistoricalFutures, getPrice,
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
-    getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition
+    getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition,
+    monitorMarketAndAdjustStopLoss
 };

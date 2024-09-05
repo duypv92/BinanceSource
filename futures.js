@@ -25,7 +25,6 @@ const setLeverage = async (symbol, leverage) => {
 };
 
 const futuresTrade = async () => {
-
     var currentdate = new Date();
     var currentPrice = await common_func.getPrice(symbol);
     utils.customLog(`${utils.FgGreen}-----------${currentdate} **************START***************-----------${utils.Reset}`);
@@ -55,11 +54,9 @@ const futuresTrade = async () => {
     // Check previous trade is lose or win
     let lastClosedTrade = await common_func.getLastClosedPosition(symbol);
     let realizedPnl = parseFloat(lastClosedTrade.realizedPnl);
-    // console.log(realizedPnl);
     if (realizedPnl < 0) {
         // Check time of last trade
         let lastestTime = new Date(lastClosedTrade.time);
-        // console.log(lastestTime);
         let diffMs = currentdate - lastestTime;
         let diffMins = diffMs / 60000; // minutes
         if (diffMins >= 31) {
@@ -75,8 +72,7 @@ const futuresTrade = async () => {
     // get balance futures
     var balance = await common_func.getFuturesBalance(asset);
     if (balance) {
-        utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in Futures Wallet:`);
-        console.log(balance);
+        utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in Futures Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
         if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
             balance = ((parseFloat(balance) * 50) / 100) * 10;
@@ -89,8 +85,6 @@ const futuresTrade = async () => {
         }
     } else {
         utils.customLog(`→ Could not retrieve ${asset} balance. => use default quantity = 6.`);
-        // utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
-        // return;
     }
 
     // Thiết lập đòn bẩy Leverage
