@@ -91,7 +91,7 @@ const futuresTrade = async () => {
         for (let index = 0; index < marketHistory.length; index++) {
             const element = marketHistory[index];
             let currentAction = element.action;
-            if (_action != null && _action != currentAction && currentAction != "HOLD") {
+            if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
                 isOut = true;
                 utils.customLog(`is Out`);
                 break;
