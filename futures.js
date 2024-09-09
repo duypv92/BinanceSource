@@ -8,7 +8,7 @@ const symbol = 'SUIUSDT' //'BTCUSDT' SUIUSDT; // Replace with the symbol of the 
 const asset = 'USDT';
 const leverage = 10;
 
-
+let marketHistory = [];
 
 // Thiết lập mức đòn bẩy (Leverage)
 const setLeverage = async (symbol, leverage) => {
@@ -34,6 +34,11 @@ const futuresTrade = async () => {
     if (marketStatus == null) {
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
+    } else {
+        marketHistory.push(marketStatus);
+        if (marketHistory.length > 4) {
+            marketHistory.shift();
+        }
     }
 
     // Close All Positions And Orders in futures
@@ -68,6 +73,45 @@ const futuresTrade = async () => {
         }
     }
 
+    // Check market history
+    if (marketHistory.length < 4) {
+        utils.customLog(`→ Not enough number of time of action => exit;`);
+        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        return;
+    } else {
+        // console.log(marketHistory);
+        utils.customLog(`Check continuity of new futures action...`);
+
+        let isOut = false;
+        let holdTimes = 0;
+
+        let _action = null;
+        for (let index = 0; index < marketHistory.length; index++) {
+            const element = marketHistory[index];
+            let currentAction = element.action;
+            if (_action != null && _action != currentAction && currentAction != "HOLD") {
+                isOut = true;
+                utils.customLog(`is Out`);
+                break;
+            } else {
+                if (currentAction == "HOLD") {
+                    holdTimes += 1;
+                }
+                _action = currentAction;
+            }
+        }
+        if (isOut || holdTimes > 1) {
+            utils.customLog(`→ Action has no continuity => exit;`);
+            utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+            return;
+        } else {
+            utils.customLog(`→ Action has the continuity => continue;`);
+        }
+        // Remove first action out of array
+        marketHistory.shift();
+    }
+
+    utils.customLog(`${utils.FgCyan} Start order new position`);
     var quantity = 6;
     // get balance futures
     var balance = await common_func.getFuturesBalance(asset);
@@ -97,10 +141,11 @@ const futuresTrade = async () => {
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 60 * 5; // 15 minutes
+    var timmer = 1000 * 60 * 4; // 15 minutes
+    // var timmer = 1000 * 5; // 15 minutes
     futuresTrade();
     function futuresLoop() {
-        console.log("■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●");
+        console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
         setTimeout(function () {
             futuresTrade();
             i++;

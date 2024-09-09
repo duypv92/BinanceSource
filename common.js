@@ -211,8 +211,9 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
         let orderValue = roundedQuantity * currentPrice;
 
         utils.customLog(`-------`);
-        utils.customLog(`before round quantity: ${quantity}`);
-        utils.customLog(`quantityPrecision: ${quantityPrecision}`);
+        // utils.customLog(`before round quantity: ${quantity}`);
+        // utils.customLog(`quantityPrecision: ${quantityPrecision}`);
+        // utils.customLog(`minNotional: ${minNotional}`);
 
         // Điều chỉnh số lượng nếu không đạt mức tối thiểu
         if (orderValue < minNotional) {
@@ -225,11 +226,8 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
             }
         }
 
-        utils.customLog(`-------`);
-        utils.customLog(`orderValue: ${orderValue}`);
-        utils.customLog(`minNotional: ${minNotional}`);
+        // utils.customLog(`orderValue: ${orderValue}`);
         utils.customLog(`roundedQuantity: ${roundedQuantity}`);
-        utils.customLog(`-------`);
 
         // Làm tròn các giá trị theo giới hạn
         const roundedStopLoss = stopLoss ? roundToPrecision(stopLoss, pricePrecision) : null;
@@ -237,6 +235,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
 
         utils.customLog(`roundedStopLoss: ${roundedStopLoss}`);
         utils.customLog(`roundedTakeProfit: ${roundedTakeProfit}`);
+        utils.customLog(`-------`);
 
         const order = await client.futuresOrder({
             symbol: symbol,
@@ -333,7 +332,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                         let currentdate = new Date();
                         let diffMs = currentdate - orderedTime;
                         let diffMins = diffMs / 60000; // minutes
-                        if (diffMins >= 31) {   // If > 30 minutes
+                        if (diffMins >= 16) {   // If > 30 minutes
                             utils.customLog("Checking ADX for define stop loss");
                             let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
                             if (newStopLoss != null) {
@@ -484,7 +483,7 @@ const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus
         utils.customLog(`${utils.FgYellow} ◆◆◆◆◆SUMMARY◆◆◆◆◆ ${utils.Reset}`);
         utils.customLog(`price: ${currentPrice}`);
         utils.customLog(`quantity: ${quantity}`);
-        utils.customLog(`Action: ${marketStatus.action}`);
+        utils.customLog(`Action: ${utils.FgYellow} ${marketStatus.action} ${utils.Reset}`);
         utils.customLog(`Stop Loss: ${marketStatus.stopLoss}`);
         utils.customLog(`Take Profit: ${marketStatus.takeProfit}`);
         // utils.customLog(`Profit difference: ${marketStatus.takeProfit - currentPrice}`);
