@@ -51,7 +51,7 @@ const futuresTrade = async () => {
 
     // If action is hold, doing nothing.
     if (marketStatus.action == "HOLD") {
-        utils.customLog("→ Market's status is HOLD => exit;");
+        utils.customLog(`→ Market's status is ${utils.FgYellow} HOLD ${utils.Reset} => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     }
@@ -93,7 +93,7 @@ const futuresTrade = async () => {
             let currentAction = element.action;
             if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
                 isOut = true;
-                utils.customLog(`is Out`);
+                utils.customLog(`Inconsistent action → Out`);
                 break;
             } else {
                 if (currentAction == "HOLD") {
@@ -102,7 +102,7 @@ const futuresTrade = async () => {
                 _action = currentAction;
             }
         }
-        if (isOut || holdTimes > 1) {
+        if (isOut || holdTimes > 2) {
             utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
             utils.customLog(`→ Action has no continuity => exit;`);
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -114,7 +114,16 @@ const futuresTrade = async () => {
         marketHistory.shift();
     }
 
-    utils.customLog(`${utils.FgCyan} Start order new position`);
+    utils.customLog(`→ Start determine Trend Reversal..`);
+    let trendAction = await common_func.determineTrendReversal(symbol);
+    utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}${utils.Reset}`);
+    utils.customLog(`Trend Reversalaction: ${utils.FgYellow}${trendAction}${utils.Reset}`);
+    if (trendAction != marketStatus.action && trendAction != "HOLD") {
+        utils.customLog(`${utils.FgYellow}→ The Trend action is not same with new suggest action => exit;${utils.Reset}`);
+        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        return;
+    }
+    utils.customLog(`→ ${utils.FgCyan} Start order new position`);
     var quantity = 6;
     // get balance futures
     var balance = await common_func.getFuturesBalance(asset);

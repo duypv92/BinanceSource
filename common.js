@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Binance = require('binance-api-node').default;
-const { SMA, RSI, ATR, ADX } = require('technicalindicators');
+const { SMA, RSI, ATR, ADX, MACD } = require('technicalindicators');
 var utils = require('./utils');
 
 const client = Binance({
@@ -18,10 +18,12 @@ const getHistoricalDataCustom = async (symbol, interval, limit = 500) => {
         });
 
         return candles.map(candle => ({
+            open: parseFloat(candle.open),
             close: parseFloat(candle.close),
             high: parseFloat(candle.high),
             low: parseFloat(candle.low),
-            volume: parseFloat(candle.volume)
+            volume: parseFloat(candle.volume),
+            timestamp: candle.closeTime // Lấy timestamp của nến đóng
         }));
     } catch (error) {
         console.error('Error fetching historical data:', error);
@@ -311,7 +313,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
                 utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-                // console.log(parseFloat(positionAmt) > 0);
+
                 utils.customLog(`New suggest action: ${utils.FgYellow}${currentAction}`);
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
@@ -332,7 +334,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                         let currentdate = new Date();
                         let diffMs = currentdate - orderedTime;
                         let diffMins = diffMs / 60000; // minutes
-                        if (diffMins >= 16) {   // If > 30 minutes
+                        if (diffMins > 15) {   // If > 30 minutes
                             utils.customLog("Checking ADX for define stop loss");
                             let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
                             if (newStopLoss != null) {
@@ -344,9 +346,6 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                         } else {
                             isStop = false;
                         }
-                        // if (!isStop) {
-                            // utils.customLog('→ Keep hold current position.....');
-                        // }
                     } else if (unrealizedProfit > closingFee) {
                         if (unrealizedProfit >= (closingFee * 1.5)) {
                             isStop = true;
@@ -355,7 +354,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                             utils.customLog('→ Not enough profit!!');
                         }
                     } else {
-                        // utils.customLog('→ Keep hold current position.....');
+                        utils.customLog('→ Not enough profit!!');
                     }
                 }
 
@@ -523,6 +522,7 @@ const getLastClosedPosition = async (symbol) => {
     }
 };
 
+// Giám Sát ADX và Volume để Điều Chỉnh Stop Loss
 const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
     try {
         let position = parseFloat(_position) > 0 ? 'BUY' : 'SELL';
@@ -538,6 +538,9 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         const lowPrices = data.map(d => d.low);
         const volumes = data.map(d => d.volume);
 
+        let stopLoss = null;
+
+        // Apply ADX for check market
         const adx = ADX.calculate({
             period: 14,
             close: closePrices,
@@ -550,10 +553,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         const averageVolume = SMA.calculate({ period: 20, values: volumes });
         const latestVolume = volumes[volumes.length - 1];
 
-        utils.customLog(`Latest ADX: ${latestADX.adx}`);
-        utils.customLog(`Latest Volume: ${latestVolume}, Average Volume: ${averageVolume[averageVolume.length - 1]}`);
-
-        let stopLoss = null;
+        utils.customLog(`Latest ADX: ${latestADX.adx},Latest/Average Volume: ${latestVolume}/${averageVolume[averageVolume.length - 1]}`);
 
         // Điều chỉnh Stop Loss dựa trên vị thế
         if (latestADX.adx > 25 && latestVolume > averageVolume[averageVolume.length - 1]) {
@@ -568,6 +568,48 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
             }
             utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
         }
+        // in case stopLoss is still null, continue use other method to check. 
+        if (stopLoss != null) {
+            return stopLoss;
+        }
+        // Continue Apply RSI, MACD for check markets
+        // Tính RSI
+        const rsiValues = RSI.calculate({
+            period: 14,
+            values: closePrices
+        });
+        const latestRSI = rsiValues[rsiValues.length - 1];
+
+        // Tính MACD
+        const macdInput = {
+            values: closePrices,
+            fastPeriod: 12,
+            slowPeriod: 26,
+            signalPeriod: 9,
+            SimpleMAOscillator: false, // EMA
+            SimpleMASignal: false
+        };
+        const macd = MACD.calculate(macdInput);
+        const latestMACD = macd[macd.length - 1];
+        utils.customLog(`Current RSI: ${latestRSI}, latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal}`);
+        // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
+        if (position === 'BUY') {
+            if (latestRSI > 70 || latestMACD.MACD < latestMACD.signal) {
+                utils.customLog('RSI indicates overbought, potential for price reversal.');
+                stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
+                utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
+            } else {
+                utils.customLog('Market seems stable, no immediate action taken.');
+            }
+        } else if (position === 'SELL') {
+            if (latestRSI < 30 || latestMACD.MACD > latestMACD.signal) {
+                utils.customLog('RSI indicates oversold, potential for price reversal.');
+                stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
+                utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
+            } else {
+                utils.customLog('→ Market seems stable, no immediate action taken.');
+            }
+        }
         return stopLoss;
         // Có thể thêm logic đặt lệnh stop loss ở đây
     } catch (error) {
@@ -576,10 +618,62 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
     }
 };
 
+//  kết hợp sử dụng RSI, ATR, MACD, và Volume nhằm xác định khả năng đảo chiều của thị trường
+const determineTrendReversal = async (symbol) => {
+    const data = await getHistoricalDataCustom(symbol, '15m');
+
+    if (data.length < 26) {
+        console.error('Not enough data to calculate indicators.');
+        return;
+    }
+
+    const closePrices = data.map(d => d.close);
+    const highPrices = data.map(d => d.high);
+    const lowPrices = data.map(d => d.low);
+    const volumes = data.map(d => d.volume);
+
+    // Tính RSI
+    const rsi = RSI.calculate({ period: 14, values: closePrices });
+    const latestRSI = rsi[rsi.length - 1];
+
+    // Tính ATR
+    const atr = ATR.calculate({ period: 14, high: highPrices, low: lowPrices, close: closePrices });
+    const latestATR = atr[atr.length - 1];
+
+    // Tính MACD
+    const macdInput = {
+        values: closePrices,
+        fastPeriod: 12,
+        slowPeriod: 26,
+        signalPeriod: 9,
+        SimpleMAOscillator: false, // Sử dụng EMA
+        SimpleMASignal: false
+    };
+    const macd = MACD.calculate(macdInput);
+    const latestMACD = macd[macd.length - 1];
+
+    let action = 'HOLD';
+
+    // Phân tích RSI và MACD để xác định xu hướng đảo chiều
+    if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal && latestATR > atr[atr.length - 2]) {
+        // Quá mua, MACD cho tín hiệu bán, khối lượng tăng và biến động tăng
+        action = 'SELL';
+    } else if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal && latestATR > atr[atr.length - 2]) {
+        // Quá bán, MACD cho tín hiệu mua, khối lượng tăng và biến động tăng
+        action = 'BUY';
+    }
+    // console.log(`Action: ${action}`);
+    // console.log(`Latest RSI: ${latestRSI}`);
+    // console.log(`Latest MACD:`, latestMACD);
+    // console.log(`Latest ATR: ${latestATR}`);
+    return action;
+};
+
+
 module.exports = {
     client, getHistoricalData, getHistoricalFutures, getPrice,
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
     getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition,
-    monitorMarketAndAdjustStopLoss
+    monitorMarketAndAdjustStopLoss, determineTrendReversal
 };
