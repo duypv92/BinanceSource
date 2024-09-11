@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Binance = require('binance-api-node').default;
-const { SMA, RSI, ATR, ADX, MACD } = require('technicalindicators');
+const { SMA, RSI, ATR, ADX, MACD, BollingerBands } = require('technicalindicators');
 var utils = require('./utils');
 
 const client = Binance({
@@ -594,7 +594,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         utils.customLog(`Current RSI: ${latestRSI}, latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal}`);
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
         if (position === 'BUY') {
-            if (latestRSI > 70 || latestMACD.MACD < latestMACD.signal) {
+            if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
                 utils.customLog('RSI indicates overbought, potential for price reversal.');
                 stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
                 utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
@@ -602,7 +602,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
                 utils.customLog('Market seems stable, no immediate action taken.');
             }
         } else if (position === 'SELL') {
-            if (latestRSI < 30 || latestMACD.MACD > latestMACD.signal) {
+            if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal) {
                 utils.customLog('RSI indicates oversold, potential for price reversal.');
                 stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
                 utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
@@ -655,25 +655,80 @@ const determineTrendReversal = async (symbol) => {
     let action = 'HOLD';
 
     // Phân tích RSI và MACD để xác định xu hướng đảo chiều
-    if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal && latestATR > atr[atr.length - 2]) {
+    // if ((latestRSI > 65 || latestMACD.MACD < latestMACD.signal) && latestATR > atr[atr.length - 2]) {
+    if (latestRSI > 65 || latestMACD.MACD < latestMACD.signal) {
         // Quá mua, MACD cho tín hiệu bán, khối lượng tăng và biến động tăng
         action = 'SELL';
-    } else if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal && latestATR > atr[atr.length - 2]) {
+        // } else if ((latestRSI < 35 || latestMACD.MACD > latestMACD.signal) && latestATR > atr[atr.length - 2]) {
+    } else if (latestRSI < 35 || latestMACD.MACD > latestMACD.signal) {
         // Quá bán, MACD cho tín hiệu mua, khối lượng tăng và biến động tăng
         action = 'BUY';
     }
     // console.log(`Action: ${action}`);
-    // console.log(`Latest RSI: ${latestRSI}`);
-    // console.log(`Latest MACD:`, latestMACD);
-    // console.log(`Latest ATR: ${latestATR}`);
+    utils.customLog(`Latest RSI: ${latestRSI}`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal}`);
+    // utils.customLog(`Latest ATR: ${latestATR}, atr[atr.length - 2]: ${atr[atr.length - 2]}`);
     return action;
 };
 
+// Calculate indicators
+const calculateIndicators = (data) => {
+    const closePrices = data.map(d => d.close);
+    const highPrices = data.map(d => d.high);
+    const lowPrices = data.map(d => d.low);
+
+    // ATR - Average True Range for volatility
+    const atr = ATR.calculate({ period: 14, high: highPrices, low: lowPrices, close: closePrices });
+
+    // RSI - Relative Strength Index for overbought/oversold
+    const rsi = RSI.calculate({ period: 14, values: closePrices });
+
+    // Bollinger Bands for volatility expansion/contraction
+    const bb = BollingerBands.calculate({
+        period: 20,
+        values: closePrices,
+        stdDev: 2
+    });
+
+    return {
+        atr,
+        rsi,
+        bb
+    };
+};
+
+// Determine if a sudden move happens
+const detectSuddenMove = async (symbol) => {
+
+    const data = await getHistoricalDataCustom(symbol, '15m');
+    const { atr, rsi, bb } = calculateIndicators(data);
+
+    const latestATR = atr[atr.length - 1];
+    const latestRSI = rsi[rsi.length - 1];
+    const latestClose = bb[bb.length - 1].close;
+    const lowerBand = bb[bb.length - 1].lower;
+    const upperBand = bb[bb.length - 1].upper;
+
+    // Check if ATR suddenly increases indicating a spike in volatility
+    const volatilitySpike = latestATR > (1.5 * atr[atr.length - 2]);
+
+    // Check if price moves outside Bollinger Bands
+    const outsideUpperBand = latestClose > upperBand;
+    const outsideLowerBand = latestClose < lowerBand;
+
+    // Combine conditions
+    const suddenMove = volatilitySpike || outsideUpperBand || outsideLowerBand;
+
+    // console.log('Volatility spike:', volatilitySpike);
+    // console.log('Price outside Bollinger Bands:', outsideUpperBand || outsideLowerBand);
+
+    return suddenMove;
+};
 
 module.exports = {
     client, getHistoricalData, getHistoricalFutures, getPrice,
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
     getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition,
-    monitorMarketAndAdjustStopLoss, determineTrendReversal
+    monitorMarketAndAdjustStopLoss, determineTrendReversal, detectSuddenMove
 };

@@ -114,6 +114,16 @@ const futuresTrade = async () => {
         marketHistory.shift();
     }
 
+    utils.customLog(`→ Start check suddenMove..`);
+    const suddenMove = await common_func.detectSuddenMove(symbol);
+    if (suddenMove) {
+        utils.customLog(`${utils.FgYellow}Sudden price move detected! Consider taking action. => exit;${utils.Reset}`);
+        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        return;
+    } else {
+        utils.customLog('No sudden moves detected. => Continue');
+    }
+
     utils.customLog(`→ Start determine Trend Reversal..`);
     let trendAction = await common_func.determineTrendReversal(symbol);
     utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}${utils.Reset}`);
@@ -123,6 +133,7 @@ const futuresTrade = async () => {
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     }
+
     utils.customLog(`→ ${utils.FgCyan} Start order new position`);
     var quantity = 6;
     // get balance futures
