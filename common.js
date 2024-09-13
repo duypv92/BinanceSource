@@ -553,7 +553,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         const averageVolume = SMA.calculate({ period: 20, values: volumes });
         const latestVolume = volumes[volumes.length - 1];
 
-        utils.customLog(`Latest ADX: ${latestADX.adx},Latest/Average Volume: ${latestVolume}/${averageVolume[averageVolume.length - 1]}`);
+        utils.customLog(`Latest ADX: ${latestADX.adx},Latest/Average Volume: ${latestVolume}/${averageVolume[averageVolume.length - 1]} (if ADX > 25)`);
 
         // Điều chỉnh Stop Loss dựa trên vị thế
         if (latestADX.adx > 25 && latestVolume > averageVolume[averageVolume.length - 1]) {
@@ -591,9 +591,10 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         };
         const macd = MACD.calculate(macdInput);
         const latestMACD = macd[macd.length - 1];
-        utils.customLog(`Current RSI: ${latestRSI}, latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal}`);
+        
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
         if (position === 'BUY') {
+            utils.customLog(`Current RSI: ${latestRSI} (>70), latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD < signal)`);
             if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
                 utils.customLog('RSI indicates overbought, potential for price reversal.');
                 stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
@@ -602,6 +603,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
                 utils.customLog('Market seems stable, no immediate action taken.');
             }
         } else if (position === 'SELL') {
+            utils.customLog(`Current RSI: ${latestRSI} (<30), latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD > signal)`);
             if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal) {
                 utils.customLog('RSI indicates oversold, potential for price reversal.');
                 stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
@@ -665,8 +667,8 @@ const determineTrendReversal = async (symbol) => {
         action = 'BUY';
     }
     // console.log(`Action: ${action}`);
-    utils.customLog(`Latest RSI: ${latestRSI}`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal}`);
+    utils.customLog(`Latest RSI: ${latestRSI} (>65 => SELL, <35 => BUY)`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY, else => SELL`);
     // utils.customLog(`Latest ATR: ${latestATR}, atr[atr.length - 2]: ${atr[atr.length - 2]}`);
     return action;
 };

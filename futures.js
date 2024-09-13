@@ -74,45 +74,45 @@ const futuresTrade = async () => {
         }
     }
 
-    // // Check market history
-    // if (marketHistory.length < 4) {
-    //     utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
-    //     utils.customLog(`→ Not enough number of time of action => exit;`);
-    //     utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
-    //     return;
-    // } else {
-    //     // console.log(marketHistory);
-    //     utils.customLog(`Check continuity of new futures action...`);
+    // Check market history
+    if (marketHistory.length < 4) {
+        utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
+        utils.customLog(`→ Not enough number of time of action => exit;`);
+        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        return;
+    } else {
+        // console.log(marketHistory);
+        utils.customLog(`Check continuity of new futures action...`);
 
-    //     let isOut = false;
-    //     let holdTimes = 0;
+        let isOut = false;
+        let holdTimes = 0;
 
-    //     let _action = null;
-    //     for (let index = 0; index < marketHistory.length; index++) {
-    //         const element = marketHistory[index];
-    //         let currentAction = element.action;
-    //         if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
-    //             isOut = true;
-    //             utils.customLog(`Inconsistent action → Out`);
-    //             break;
-    //         } else {
-    //             if (currentAction == "HOLD") {
-    //                 holdTimes += 1;
-    //             }
-    //             _action = currentAction;
-    //         }
-    //     }
-    //     if (isOut || holdTimes > 2) {
-    //         utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
-    //         utils.customLog(`→ Action has no continuity => exit;`);
-    //         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
-    //         return;
-    //     } else {
-    //         // utils.customLog(`→ Action has the continuity => continue;`);
-    //     }
-    //     // Remove first action out of array
-    //     marketHistory.shift();
-    // }
+        let _action = null;
+        for (let index = 0; index < marketHistory.length; index++) {
+            const element = marketHistory[index];
+            let currentAction = element.action;
+            if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
+                isOut = true;
+                utils.customLog(`Inconsistent action → Out`);
+                break;
+            } else {
+                if (currentAction == "HOLD") {
+                    holdTimes += 1;
+                }
+                _action = currentAction;
+            }
+        }
+        if (isOut || holdTimes > 2) {
+            utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
+            utils.customLog(`→ Action has no continuity => exit;`);
+            utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+            return;
+        } else {
+            // utils.customLog(`→ Action has the continuity => continue;`);
+        }
+        // Remove first action out of array
+        marketHistory.shift();
+    }
 
     utils.customLog(`→ Start check suddenMove..`);
     const suddenMove = await common_func.detectSuddenMove(symbol);
