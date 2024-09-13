@@ -82,7 +82,7 @@ const futuresTrade = async () => {
         return;
     } else {
         // console.log(marketHistory);
-        utils.customLog(`Check continuity of new futures action...`);
+        utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
 
         let isOut = false;
         let holdTimes = 0;
@@ -114,7 +114,7 @@ const futuresTrade = async () => {
         marketHistory.shift();
     }
 
-    utils.customLog(`→ Start check suddenMove..`);
+    utils.customLog(`${utils.BgMagenta}Start check suddenMove..${utils.Reset}`);
     const suddenMove = await common_func.detectSuddenMove(symbol);
     if (suddenMove) {
         utils.customLog(`${utils.FgYellow}Sudden price move detected! Consider taking action. => exit;${utils.Reset}`);
@@ -124,7 +124,7 @@ const futuresTrade = async () => {
         utils.customLog('No sudden moves detected. => Continue');
     }
 
-    utils.customLog(`→ Start determine Trend Reversal..`);
+    utils.customLog(`${utils.BgMagenta}Start determine Trend Reversal..${utils.Reset}`);
     let trendAction = await common_func.determineTrendReversal(symbol);
     utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}${utils.Reset}`);
     utils.customLog(`Trend Reversalaction: ${utils.FgYellow}${trendAction}${utils.Reset}`);
@@ -134,7 +134,7 @@ const futuresTrade = async () => {
         return;
     }
 
-    utils.customLog(`→ ${utils.FgCyan} Start order new position`);
+    utils.customLog(`→${utils.BgMagenta}Start order new position${utils.Reset}`);
     var quantity = 6;
     // get balance futures
     var balance = await common_func.getFuturesBalance(asset);

@@ -307,35 +307,35 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 const entryValue = Math.abs(parseFloat(positionAmt)) * parseFloat(entryPrice);
                 const pnlPercentageAfterFees = (pnlAfterFees / entryValue) * 100;
 
-                utils.customLog(`Symbol: ${symbol}`);
+                // utils.customLog(`Symbol: ${symbol}`);
                 utils.customLog(`positionAmt: ${Number(positionAmt)}`);
-                utils.customLog(`Unrealized PnL: ${unrealizedProfit.toFixed(2)} USD`);
+                utils.customLog(`${utils.FgGreen}Unrealized PnL:${utils.Reset} ${unrealizedProfit.toFixed(2)} USD`);
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
-                utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
+                // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
 
                 utils.customLog(`New suggest action: ${utils.FgYellow}${currentAction}`);
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
                         isStop = true;
-                        utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible`);
+                        utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
                     }
                 } else {
                     if (currentAction == 'BUY') {
                         isStop = true;
-                        utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible`);
+                        utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
                     }
                 }
                 if (isStop == false) {
                     if (unrealizedProfit < 0) {
-                        utils.customLog('→ Are losing money...');
+                        utils.customLog('→ Are losing money');
                         // Check time of position is > 30 minutes or not
                         let orderedTime = new Date(position.updateTime);
                         let currentdate = new Date();
                         let diffMs = currentdate - orderedTime;
                         let diffMins = diffMs / 60000; // minutes
                         if (diffMins > 15) {   // If > 30 minutes
-                            utils.customLog("Checking ADX for define stop loss");
+                            utils.customLog(`${utils.BgMagenta}Checking market status for define stop loss...${utils.Reset}`);
                             let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
                             if (newStopLoss != null) {
                                 // If market price have a large change => stop loss.
