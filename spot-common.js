@@ -100,6 +100,8 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
                 // If market price have a large change => stop loss.
                 await placeSellOrder(symbol, 'SUI');
                 isStop = true;
+            } else {
+                utils.customLog('→ Are losing money → Keep hold');
             }
         } else {
             const closingFee = parseFloat(lastestSpot.commission);
@@ -109,7 +111,7 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
                 await placeSellOrder(symbol, 'SUI');
                 isStop = true;
             } else {
-                utils.customLog('→ Not enough profit!!');
+                utils.customLog('→ Not enough profit!! → Keep hold');
             }
         }
 
@@ -239,7 +241,7 @@ const determineTrendAndSignal = async (symbol) => {
     }
 
 
-    utils.customLog(`Latest RSI: ${latestRSI} (<45 => ${utils.FgYellow}${latestRSI <45}${utils.Reset})`);
+    utils.customLog(`Latest RSI: ${latestRSI} (<45 => ${utils.FgYellow}${latestRSI < 45}${utils.Reset})`);
     utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal => ${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset})`);
     utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
