@@ -591,10 +591,10 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
         };
         const macd = MACD.calculate(macdInput);
         const latestMACD = macd[macd.length - 1];
-        
+
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
         if (position === 'BUY') {
-            utils.customLog(`Current RSI: ${latestRSI} (>70), latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD < signal)`);
+            utils.customLog(`Current RSI: ${latestRSI} (>70), (MACD < signal: ${latestMACD.MACD < latestMACD.signal})`);
             if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
                 utils.customLog('RSI indicates overbought, potential for price reversal.');
                 stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
@@ -603,7 +603,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
                 utils.customLog('Market seems stable, no immediate action taken.');
             }
         } else if (position === 'SELL') {
-            utils.customLog(`Current RSI: ${latestRSI} (<30), latestMACD.MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD > signal)`);
+            utils.customLog(`Current RSI: ${latestRSI} (<30), (MACD > signal: ${latestMACD.MACD > latestMACD.signal})`);
             if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal) {
                 utils.customLog('RSI indicates oversold, potential for price reversal.');
                 stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại

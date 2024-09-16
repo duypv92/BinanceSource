@@ -30,6 +30,7 @@ const futuresTrade = async () => {
     utils.customLog(`${utils.FgGreen}-----------${currentdate} **************START***************-----------${utils.Reset}`);
     utils.customLog(`The current price of ${symbol} is ${currentPrice}`);
 
+    utils.customLog(`${utils.BgMagenta}Confirm market status${utils.Reset}`);
     let marketStatus = await common_func.confirmMarketStatus(symbol, currentPrice);
     if (marketStatus == null) {
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -42,6 +43,7 @@ const futuresTrade = async () => {
     }
 
     // Close All Positions And Orders in futures
+    utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in futures${utils.Reset}`);
     let isStop = await common_func.closeAllPositionsAndOrders(marketStatus.action);
     if (!isStop) {
         utils.customLog("→ Stop renew futures requests => exit;");
@@ -57,6 +59,7 @@ const futuresTrade = async () => {
     }
 
     // Check previous trade is lose or win
+    utils.customLog(`${utils.BgMagenta}Check previous trade is lose or win...${utils.Reset}`);
     let lastClosedTrade = await common_func.getLastClosedPosition(symbol);
     let realizedPnl = parseFloat(lastClosedTrade.realizedPnl);
     if (realizedPnl < 0) {
@@ -75,15 +78,13 @@ const futuresTrade = async () => {
     }
 
     // Check market history
+    utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
     if (marketHistory.length < 4) {
         utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
         utils.customLog(`→ Not enough number of time of action => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     } else {
-        // console.log(marketHistory);
-        utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
-
         let isOut = false;
         let holdTimes = 0;
 
