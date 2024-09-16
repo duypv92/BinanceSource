@@ -91,6 +91,9 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
         if (currentAction == 'SELL') {
             isStop = true;
             utils.customLog(`${utils.FgRed} New suggest action is SELL => Stop as soon as posible${utils.Reset}`);
+            // If market price have a large change => stop loss.
+            await placeSellOrder(symbol, 'SUI');
+            return isStop;
         }
 
         if (profitLoss < 0) {

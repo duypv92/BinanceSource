@@ -31,8 +31,8 @@ const spotTrade = async () => {
     }
 
     // If action is hold, doing nothing.
-    if (suggestAction == "HOLD") {
-        utils.customLog(`→ Market's status is ${utils.FgYellow} HOLD ${utils.Reset} => exit;`);
+    if (suggestAction == "HOLD" || suggestAction == "SELL") {
+        utils.customLog(`→ Market's status is ${utils.FgYellow} HOLD/SELL ${utils.Reset} => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     }
