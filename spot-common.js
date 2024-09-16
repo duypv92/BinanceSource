@@ -239,9 +239,9 @@ const determineTrendAndSignal = async (symbol) => {
     }
 
 
-    utils.customLog(`Latest RSI: ${latestRSI} (<45 => ${latestRSI <45})`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal => ${latestMACD.MACD > latestMACD.signal})`);
-    utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${latestVolume > averageVolume})`);
+    utils.customLog(`Latest RSI: ${latestRSI} (<45 => ${utils.FgYellow}${latestRSI <45}${utils.Reset})`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal => ${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset})`);
+    utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
     return action;
 };
@@ -441,7 +441,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol) => {
         const latestMACD = macd[macd.length - 1];
 
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
-        utils.customLog(`Current RSI: ${latestRSI} (>70: ${latestRSI > 70}), (MACD < signal: ${latestMACD.MACD < latestMACD.signal})`);
+        utils.customLog(`Current RSI: ${latestRSI} (>70: ${utils.FgYellow}${latestRSI > 70}${utils.Reset}), (MACD < signal: ${utils.FgYellow}${latestMACD.MACD < latestMACD.signal}${utils.Reset})`);
         if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
             utils.customLog('RSI indicates overbought, potential for price reversal.');
             stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
