@@ -231,7 +231,7 @@ const determineTrendAndSignal = async (symbol) => {
     if (latestMACD.MACD > latestMACD.signal
         && shortTermMA[shortTermMA.length - 1] > longTermMA[longTermMA.length - 1]
         // && latestVolume > averageVolume
-        && latestRSI < 45) {
+        && latestRSI < 50) {
         action = 'BUY'; // MACD cắt lên, MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
     } else if (latestMACD.MACD < latestMACD.signal
         && shortTermMA[shortTermMA.length - 1] < longTermMA[longTermMA.length - 1]
@@ -241,7 +241,7 @@ const determineTrendAndSignal = async (symbol) => {
     }
 
 
-    utils.customLog(`Latest RSI: ${latestRSI} (<45 => ${utils.FgYellow}${latestRSI < 45}${utils.Reset})`);
+    utils.customLog(`Latest RSI: ${latestRSI} (<50 => ${utils.FgYellow}${latestRSI < 50}${utils.Reset})`);
     utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal => ${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset})`);
     utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
