@@ -67,7 +67,7 @@ const spotTrade = async () => {
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 60 * 4; // 15 minutes
+    var timmer = 1000 * 61 * 15; // 15 minutes
     // var timmer = 1000 * 5; // 15 minutes
     spotTrade();
     function spotLoop() {
