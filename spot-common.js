@@ -107,9 +107,13 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
                 utils.customLog('→ Are losing money → Keep hold');
             }
         } else {
+            if (currentAction == 'BUY') {
+                utils.customLog('→ Profit continues to increase!! → Keep hold');
+                return false;
+            }
             const closingFee = parseFloat(lastestSpot.commission);
             utils.customLog(`Closing Fee: ${closingFee} USD`);
-            if (profitLoss >= (closingFee * 4)) {
+            if (profitLoss >= (closingFee * 8)) {
                 utils.customLog(`${utils.FgYellow}→ Take profit${utils.Reset}`);
                 await placeSellOrder(symbol, 'SUI');
                 isStop = true;
@@ -233,20 +237,22 @@ const determineTrendAndSignal = async (symbol) => {
     // Kiểm tra xu hướng tăng hoặc giảm dựa vào MACD, MA và Volume
     if (latestMACD.MACD > latestMACD.signal
         && shortTermMA[shortTermMA.length - 1] > longTermMA[longTermMA.length - 1]
-        // && latestVolume > averageVolume
-        && latestRSI < 50) {
+        && latestVolume > averageVolume
+        // && latestRSI < 50
+    ) {
         action = 'BUY'; // MACD cắt lên, MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
     } else if (latestMACD.MACD < latestMACD.signal
         && shortTermMA[shortTermMA.length - 1] < longTermMA[longTermMA.length - 1]
-        // && latestVolume > averageVolume
+        // && latestRSI > 50
+        && latestVolume > averageVolume
     ) {
         action = 'SELL'; // MACD cắt xuống, MA ngắn hạn cắt xuống dưới MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng giảm mạnh
     }
 
-
     utils.customLog(`Latest RSI: ${latestRSI} (<50 => ${utils.FgYellow}${latestRSI < 50}${utils.Reset})`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal => ${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset})`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`);
     utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
+    utils.customLog(`lastShortTermMA: ${shortTermMA[shortTermMA.length - 1]}, lastLongTermMA: ${longTermMA[longTermMA.length - 1]} (Short>Long=>BUY(${utils.FgYellow}${shortTermMA[shortTermMA.length - 1] > longTermMA[longTermMA.length - 1]}${utils.Reset}))`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
     return action;
 };
@@ -284,7 +290,6 @@ const getLotSize = async (symbol) => {
     try {
         const exchangeInfo = await client.exchangeInfo();
         const symbolInfo = exchangeInfo.symbols.find(s => s.symbol === symbol);
-
         const lotSizeFilter = symbolInfo.filters.find(f => f.filterType === 'LOT_SIZE');
         return {
             minQty: parseFloat(lotSizeFilter.minQty),
@@ -298,6 +303,17 @@ const getLotSize = async (symbol) => {
 
 const roundToPrecision = (quantity, precision) => {
     return Math.round(quantity * Math.pow(10, precision)) / Math.pow(10, precision);
+};
+
+// Hàm làm tròn số lượng tài sản theo stepSize
+const roundQuantity = (quantity, stepSize) => {
+    const precision = Math.floor(Math.log10(1 / stepSize));
+    return parseFloat(quantity.toFixed(precision));
+};
+
+// Hàm tính phí giao dịch 0.1% trên Binance
+const calculateFee = (quantity, feePercentage = 0.001) => {
+    return quantity * feePercentage;
 };
 
 // Đặt lệnh mua hoặc bán trên Binance
@@ -332,14 +348,23 @@ const placeSpotOrder = async (symbol, side, quantity) => {
 
 // Hàm đặt lệnh SELL với số lượng tài sản làm tròn và kiểm tra LOT_SIZE
 const placeSellOrder = async (symbol, asset) => {
-    const availableBalance = await getSpotBalance(asset);
+    let availableBalance = await getSpotBalance(asset);
+    availableBalance = parseFloat(availableBalance);
     const { minQty, stepSize } = await getLotSize(symbol);
 
-    console.log(`Min Quantity: ${minQty}, Step Size: ${stepSize}`);
+    // console.log(`Min Quantity: ${minQty}, Step Size: ${stepSize}`);
+
+    // Trừ trước phí giao dịch 0.1% để đảm bảo số dư sau khi trừ phí vẫn đủ
+    const fee = calculateFee(availableBalance);
+    availableBalance -= fee; // Giảm số dư khả dụng
+
+    // // Làm tròn số lượng tài sản theo stepSize
+    // const quantityToSell = Math.floor(availableBalance / stepSize) * stepSize;
 
     // Làm tròn số lượng tài sản theo stepSize
-    const quantityToSell = Math.floor(availableBalance / stepSize) * stepSize;
-    utils.customLog(`quantityToSell: ${quantityToSell}`);
+    const quantityToSell = roundQuantity(availableBalance, stepSize);
+
+    utils.customLog(`Quantity To Sell: ${quantityToSell}`);
     // Kiểm tra xem số lượng có lớn hơn minQty không
     if (quantityToSell >= minQty) {
         try {
@@ -355,7 +380,7 @@ const placeSellOrder = async (symbol, asset) => {
             console.error('Error placing sell order:', error);
         }
     } else {
-        console.log('Insufficient balance to place sell order.');
+        utils.customLog(`${utils.FgRed}Insufficient balance to place sell order.${utils.Reset}`);
     }
 };
 

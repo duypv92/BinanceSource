@@ -70,7 +70,6 @@ const futuresTrade = async () => {
         if (diffMins >= 31) {
             // utils.customLog("The Lastest trade is lose but time > 30 minutes => continue;");
         } else {
-            utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
             utils.customLog("The Lastest trade is lose and not enough 30 minutes => exit;");
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
             return;
@@ -80,7 +79,6 @@ const futuresTrade = async () => {
     // Check market history
     utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
     if (marketHistory.length < 4) {
-        utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
         utils.customLog(`→ Not enough number of time of action => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
@@ -104,7 +102,6 @@ const futuresTrade = async () => {
             }
         }
         if (isOut || holdTimes > 2) {
-            utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}`);
             utils.customLog(`→ Action has no continuity => exit;`);
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
             return;

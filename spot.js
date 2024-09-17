@@ -45,7 +45,7 @@ const spotTrade = async () => {
         utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in spot Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
         if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
-            balance = ((parseFloat(balance) * 5) / 100);
+            balance = ((parseFloat(balance) * 10) / 100);
             quantity = Number(Number(balance / currentPrice).toFixed(2));
             utils.customLog(`Quantity to order: ${quantity}`);
         } else {
@@ -67,7 +67,7 @@ const spotTrade = async () => {
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 61 * 15; // 15 minutes
+    var timmer = 1000 * 61 * 7; // 15 minutes
     // var timmer = 1000 * 5; // 15 minutes
     spotTrade();
     function spotLoop() {

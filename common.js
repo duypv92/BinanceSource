@@ -313,8 +313,6 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
                 // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-
-                utils.customLog(`New suggest action: ${utils.FgYellow}${currentAction}`);
                 if (parseFloat(positionAmt) > 0) {
                     if (currentAction == 'SELL') {
                         isStop = true;
@@ -347,7 +345,7 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                             isStop = false;
                         }
                     } else if (unrealizedProfit > closingFee) {
-                        if (unrealizedProfit >= (closingFee * 1.5)) {
+                        if (unrealizedProfit >= (closingFee * 2)) {
                             isStop = true;
                             utils.customLog(`${utils.FgYellow}→ Take profit${utils.Reset}`);
                         } else {
@@ -426,10 +424,6 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
         const lowPrices = data.map(d => d.low);
         const volumes = data.map(d => d.volume);
 
-        // utils.customLog('closePrices: ' + closePrices);
-        // utils.customLog('highPrices: ' + highPrices);
-        // utils.customLog('lowPrices: ' + lowPrices);
-
         const shortTermMA = SMA.calculate({ period: 9, values: closePrices });
         const longTermMA = SMA.calculate({ period: 21, values: closePrices });
         const rsi = RSI.calculate({ period: 14, values: closePrices });
@@ -442,34 +436,29 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
         const lastATR = atr[atr.length - 1];
 
         const averageVolume = calculateAverageVolume(volumes, 20); // Tính toán volume trung bình trong 20 kỳ
-        // console.log(volumes);
-        // console.log(averageVolume);
-        // console.log(volumes[volumes.length - 1]);
-        // console.log(volumes[volumes.length - 1] < averageVolume);
-        // console.log(lastShortTermMA);
-        // console.log(lastLongTermMA);
-        // console.log(lastRSI);
+
         let action = 'HOLD';
         let stopLoss = null;
         let takeProfit = null;
-        // if (lastShortTermMA > lastLongTermMA && lastRSI > 50 && volumes[volumes.length - 1] > averageVolume) {
-        // } else if (lastShortTermMA < lastLongTermMA && lastRSI < 50 && volumes[volumes.length - 1] > averageVolume) {
-        if (lastShortTermMA > lastLongTermMA && lastRSI > 50 && volumes[volumes.length - 1] > averageVolume) {
+        if (lastShortTermMA > lastLongTermMA
+            && lastRSI > 50 && lastRSI < 70
+            && volumes[volumes.length - 1] > averageVolume
+        ) {
             action = 'BUY';
             stopLoss = latestClose - (1.5 * lastATR);
             takeProfit = latestClose + (1.5 * lastATR);
-        } else if (lastShortTermMA < lastLongTermMA && lastRSI < 50 && volumes[volumes.length - 1] < averageVolume) {
+        } else if (lastShortTermMA < lastLongTermMA
+            && lastRSI < 50 && lastRSI > 30
+            && volumes[volumes.length - 1] > averageVolume
+        ) {
             action = 'SELL';
             stopLoss = latestClose + (1.5 * lastATR);
             takeProfit = latestClose - (1.5 * lastATR);
         }
-
-        // utils.customLog(`price: ${currentPrice}`);
-        // utils.customLog(`Action: ${action}`);
-        // utils.customLog(`Stop Loss: ${stopLoss}`);
-        // utils.customLog(`Take Profit: ${takeProfit}`);
-        // utils.customLog(`difference 1: ${takeProfit - currentPrice}`);
-        // utils.customLog(`difference 2: ${stopLoss - currentPrice}`);
+        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short > Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), else => SELL)`);
+        utils.customLog(`lastRSI: ${lastRSI}, (> 50, <70 => BUY(${utils.FgYellow}${lastRSI > 50 && lastRSI < 70}${utils.Reset}), else => SELL)`);
+        utils.customLog(`lastest volume: ${volumes[volumes.length - 1]},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${volumes[volumes.length - 1] > averageVolume}${utils.Reset}))`);
+        utils.customLog(`→　New suggest action: ${utils.FgYellow}${action}${utils.Reset}`);
         return { action, stopLoss, takeProfit };
     } catch (error) {
         console.error('Error closing positions:', error);
@@ -634,6 +623,9 @@ const determineTrendReversal = async (symbol) => {
     const lowPrices = data.map(d => d.low);
     const volumes = data.map(d => d.volume);
 
+    const averageVolume = volumes.reduce((acc, val) => acc + val, 0) / volumes.length;
+    const latestVolume = volumes[volumes.length - 1];
+
     // Tính RSI
     const rsi = RSI.calculate({ period: 14, values: closePrices });
     const latestRSI = rsi[rsi.length - 1];
@@ -658,17 +650,17 @@ const determineTrendReversal = async (symbol) => {
 
     // Phân tích RSI và MACD để xác định xu hướng đảo chiều
     // if ((latestRSI > 65 || latestMACD.MACD < latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    if (latestRSI > 65 || latestMACD.MACD < latestMACD.signal) {
+    if ((latestRSI > 70 || latestMACD.MACD < latestMACD.signal) && latestVolume > averageVolume) {
         // Quá mua, MACD cho tín hiệu bán, khối lượng tăng và biến động tăng
         action = 'SELL';
         // } else if ((latestRSI < 35 || latestMACD.MACD > latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    } else if (latestRSI < 35 || latestMACD.MACD > latestMACD.signal) {
+    } else if (latestRSI < 30 || latestMACD.MACD > latestMACD.signal) {
         // Quá bán, MACD cho tín hiệu mua, khối lượng tăng và biến động tăng
         action = 'BUY';
     }
     // console.log(`Action: ${action}`);
-    utils.customLog(`Latest RSI: ${latestRSI} (>65 => SELL, <35 => BUY)`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY, else => SELL`);
+    utils.customLog(`Latest RSI: ${latestRSI} (>70 => SELL, <35 => BUY)`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}), else => SELL)`);
     // utils.customLog(`Latest ATR: ${latestATR}, atr[atr.length - 2]: ${atr[atr.length - 2]}`);
     return action;
 };
