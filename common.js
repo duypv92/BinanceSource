@@ -449,7 +449,7 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
             takeProfit = latestClose + (1.5 * lastATR);
         } else if (lastShortTermMA < lastLongTermMA
             && lastRSI < 50 && lastRSI > 30
-            && volumes[volumes.length - 1] > averageVolume
+            // && volumes[volumes.length - 1] > averageVolume
         ) {
             action = 'SELL';
             stopLoss = latestClose + (1.5 * lastATR);
