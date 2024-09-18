@@ -313,17 +313,17 @@ const closeAllPositionsAndOrders = async (currentAction) => {
                 utils.customLog(`Closing Fee: ${closingFee} USD`);
                 utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
                 // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-                if (parseFloat(positionAmt) > 0) {
-                    if (currentAction == 'SELL') {
-                        isStop = true;
-                        utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
-                    }
-                } else {
-                    if (currentAction == 'BUY') {
-                        isStop = true;
-                        utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
-                    }
-                }
+                // if (parseFloat(positionAmt) > 0) {
+                //     if (currentAction == 'SELL') {
+                //         isStop = true;
+                //         utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
+                //     }
+                // } else {
+                //     if (currentAction == 'BUY') {
+                //         isStop = true;
+                //         utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
+                //     }
+                // }
                 if (isStop == false) {
                     if (unrealizedProfit < 0) {
                         utils.customLog('→ Are losing money');
@@ -583,7 +583,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
 
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
         if (position === 'BUY') {
-            utils.customLog(`Current RSI: ${latestRSI} (>70), (MACD < signal: ${latestMACD.MACD < latestMACD.signal})`);
+            utils.customLog(`Current RSI: ${latestRSI} (>70=> (${utils.FgYellow}${latestRSI > 70}${utils.Reset})), (MACD < signal: ${utils.FgYellow}${latestMACD.MACD < latestMACD.signal}${utils.Reset})`);
             if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
                 utils.customLog('RSI indicates overbought, potential for price reversal.');
                 stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
@@ -592,7 +592,7 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
                 utils.customLog('Market seems stable, no immediate action taken.');
             }
         } else if (position === 'SELL') {
-            utils.customLog(`Current RSI: ${latestRSI} (<30), (MACD > signal: ${latestMACD.MACD > latestMACD.signal})`);
+            utils.customLog(`Current RSI: ${latestRSI} (<30=> (${utils.FgYellow}${latestRSI < 30}${utils.Reset})), (MACD > signal: ${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset})`);
             if (latestRSI < 30 && latestMACD.MACD > latestMACD.signal) {
                 utils.customLog('RSI indicates oversold, potential for price reversal.');
                 stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
