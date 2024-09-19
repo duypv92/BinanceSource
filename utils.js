@@ -1,3 +1,6 @@
+var fs = require('fs');
+var nodemailer = require('nodemailer');
+
 const Reset = "\x1b[0m"
 const Bright = "\x1b[1m"
 const Dim = "\x1b[2m"
@@ -48,10 +51,75 @@ const customLog = (message) => {
     let currentTime = new Date();
     var dateString = formatDate(currentTime, 'yyyy/MM/dd hh:mm:ss');
     console.log(FgBlue + `-${dateString} ${Reset}: ${message}`);
+    writeLogFile(`-${dateString} : ${message}`);
+}
+
+
+const writeLogFile = async (msg) => {
+    let custom_msg = replaceString(msg + '\n');
+    // if(custom_msg.includes('\x1b')){
+    //     const indexOfFirst = custom_msg.search('\x1b');
+    //     console.log(indexOfFirst);
+    // }
+    fs.appendFile("/tmp/log.log", custom_msg, function (err) {
+        if (err) {
+            return console.log(err);
+        }
+    });
+}
+
+const replaceString = (msg) => {
+    let result = msg;
+    if (msg.includes('\x1b')) {
+        const firstIndex = msg.indexOf('\x1b');
+        const lastIndex = firstIndex + 5;
+        result = msg.slice(0, firstIndex) + msg.slice(lastIndex);
+    }
+    // if(result.includes('\x1b')){
+    //     // console.log('exites');
+    //     // console.log(result);
+    //     replaceString(result);
+    // }
+    result = result.replace("[0m", '');
+    return result;
+}
+
+const sendMail = async (msg) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: 'duypv250592@gmail.com',
+            pass: 'ruzb mujq hjrv zdlj'
+        }
+      })
+
+    var mailOptions = {
+        from: 'duypv250592@gmail.com',
+        to: 'duypv@outlook.com',
+        subject: 'Report from binance tool',
+        text: 'That was easy!',
+        attachments: [
+            {   // file on disk as an attachment
+                filename: 'report.txt',
+                path: '/tmp/log.log' // stream this file
+            }
+        ]
+    };
+
+    await transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
 }
 
 module.exports = {
-    formatDate, customLog,
+    formatDate, customLog, writeLogFile, sendMail,
     Reset,
     Bright,
     Dim,

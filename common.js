@@ -455,7 +455,7 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
             stopLoss = latestClose + (1.5 * lastATR);
             takeProfit = latestClose - (1.5 * lastATR);
         }
-        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short > Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), else => SELL)`);
+        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), else => SELL(${utils.FgYellow}${lastShortTermMA < lastLongTermMA}${utils.Reset}))`);
         utils.customLog(`lastRSI: ${lastRSI}, (> 50 => BUY(${utils.FgYellow}${lastRSI > 50}${utils.Reset}), else => SELL)`);
         utils.customLog(`lastest volume: ${latestVolume},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset}))`);
         utils.customLog(`→　New suggest action: ${utils.FgYellow}${action}${utils.Reset}`);

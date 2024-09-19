@@ -25,6 +25,7 @@ const setLeverage = async (symbol, leverage) => {
 };
 
 const futuresTrade = async () => {
+    utils.customLog('\n');
     var currentdate = new Date();
     var currentPrice = await common_func.getPrice(symbol);
     utils.customLog(`${utils.FgGreen}-----------${currentdate} **************START***************-----------${utils.Reset}`);
@@ -159,6 +160,10 @@ const futuresTrade = async () => {
     utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
 }
 
+const sendReport = async () => {
+    await utils.sendMail('test');
+}
+
 // Example usage
 const main = async () => {
     var i = 1;
@@ -174,6 +179,16 @@ const main = async () => {
         }, timmer)
     }
     futuresLoop();
+
+    // Send report mail
+    var sendReportMailTimmer = 1000 * 62 * 15; // 16 minutes
+    function sendReportMail() {
+        setTimeout(function () {
+            sendReport();
+            sendReportMail();
+        }, sendReportMailTimmer)
+    }
+    sendReportMail();
 };
 
 main();
