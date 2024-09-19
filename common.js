@@ -436,28 +436,28 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
         const lastATR = atr[atr.length - 1];
 
         const averageVolume = calculateAverageVolume(volumes, 20); // Tính toán volume trung bình trong 20 kỳ
+        const latestVolume = volumes[volumes.length - 1];
 
         let action = 'HOLD';
         let stopLoss = null;
         let takeProfit = null;
         if (lastShortTermMA > lastLongTermMA
-            && lastRSI > 50 && lastRSI < 70
-            && volumes[volumes.length - 1] > averageVolume
+            && lastRSI > 50
+            && latestVolume > averageVolume
         ) {
             action = 'BUY';
             stopLoss = latestClose - (1.5 * lastATR);
             takeProfit = latestClose + (1.5 * lastATR);
         } else if (lastShortTermMA < lastLongTermMA
             && lastRSI < 50 && lastRSI > 30
-            // && volumes[volumes.length - 1] > averageVolume
         ) {
             action = 'SELL';
             stopLoss = latestClose + (1.5 * lastATR);
             takeProfit = latestClose - (1.5 * lastATR);
         }
         utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short > Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), else => SELL)`);
-        utils.customLog(`lastRSI: ${lastRSI}, (> 50, <70 => BUY(${utils.FgYellow}${lastRSI > 50 && lastRSI < 70}${utils.Reset}), else => SELL)`);
-        utils.customLog(`lastest volume: ${volumes[volumes.length - 1]},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${volumes[volumes.length - 1] > averageVolume}${utils.Reset}))`);
+        utils.customLog(`lastRSI: ${lastRSI}, (> 50 => BUY(${utils.FgYellow}${lastRSI > 50}${utils.Reset}), else => SELL)`);
+        utils.customLog(`lastest volume: ${latestVolume},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset}))`);
         utils.customLog(`→　New suggest action: ${utils.FgYellow}${action}${utils.Reset}`);
         return { action, stopLoss, takeProfit };
     } catch (error) {
@@ -650,11 +650,13 @@ const determineTrendReversal = async (symbol) => {
 
     // Phân tích RSI và MACD để xác định xu hướng đảo chiều
     // if ((latestRSI > 65 || latestMACD.MACD < latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    if ((latestRSI > 70 || latestMACD.MACD < latestMACD.signal) && latestVolume > averageVolume) {
+    if ((latestRSI > 70 || latestMACD.MACD < latestMACD.signal) 
+        && latestVolume > averageVolume) {
         // Quá mua, MACD cho tín hiệu bán, khối lượng tăng và biến động tăng
         action = 'SELL';
         // } else if ((latestRSI < 35 || latestMACD.MACD > latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    } else if (latestRSI < 30 || latestMACD.MACD > latestMACD.signal) {
+    } else if (latestRSI < 30 
+        || latestMACD.MACD > latestMACD.signal) {
         // Quá bán, MACD cho tín hiệu mua, khối lượng tăng và biến động tăng
         action = 'BUY';
     }
@@ -724,5 +726,5 @@ module.exports = {
     calculateMA, calculateATR, calculateTakeProfit, getFuturesBalance,
     determineTradeAction, closeAllPositionsAndOrders, getHistoricalDataCustom,
     getHistoricalDataCustomForAI, confirmMarketStatus, getLastClosedPosition,
-    monitorMarketAndAdjustStopLoss, determineTrendReversal, detectSuddenMove
+    monitorMarketAndAdjustStopLoss, determineTrendReversal, detectSuddenMove, calculateAverageVolume
 };

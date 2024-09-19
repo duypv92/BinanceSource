@@ -165,11 +165,6 @@ const getLatestSpotOrder = async (symbol) => {
     }
 };
 
-//  kết hợp sử dụng RSI, ATR, MACD, và Volume nhằm xác định khả năng đảo chiều của thị trường
-const determineTrendReversal = async (symbol) => {
-
-    return action;
-};
 
 // Determine if a sudden move happens
 const detectSuddenMove = async (symbol) => {
@@ -225,34 +220,46 @@ const determineTrendAndSignal = async (symbol) => {
     // Tính SMA ngắn hạn và dài hạn (MA 9 và MA 21)
     const shortTermMA = SMA.calculate({ period: 9, values: closePrices });
     const longTermMA = SMA.calculate({ period: 21, values: closePrices });
+    const lastShortTermMA = shortTermMA[shortTermMA.length - 1];
+    const lastLongTermMA = longTermMA[longTermMA.length - 1];
 
     const latestClose = closePrices[closePrices.length - 1];
     const latestRSI = rsi[rsi.length - 1];
+
     const latestMACD = macd[macd.length - 1];
     const latestVolume = volumes[volumes.length - 1];
-    const averageVolume = volumes.reduce((acc, val) => acc + val, 0) / volumes.length;
-
+    // const averageVolume = volumes.reduce((acc, val) => acc + val, 0) / volumes.length;
+    const averageVolume = common_func.calculateAverageVolume(volumes, 20); // Tính toán volume trung bình trong 20 kỳ
     let action = 'HOLD'; // Default hành động là không làm gì cả
 
     // Kiểm tra xu hướng tăng hoặc giảm dựa vào MACD, MA và Volume
-    if (latestMACD.MACD > latestMACD.signal
-        && shortTermMA[shortTermMA.length - 1] > longTermMA[longTermMA.length - 1]
-        && latestVolume > averageVolume
-        // && latestRSI < 50
+    if (
+        (
+            lastShortTermMA > lastLongTermMA
+            && latestRSI > 50
+            && latestVolume > averageVolume
+        )  // MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
+        ||
+        (
+            latestRSI < 30
+            && latestMACD.MACD > latestMACD.signal
+        ) // MACD cắt lên, Qua ban
     ) {
-        action = 'BUY'; // MACD cắt lên, MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
-    } else if (latestMACD.MACD < latestMACD.signal
-        && shortTermMA[shortTermMA.length - 1] < longTermMA[longTermMA.length - 1]
-        // && latestRSI > 50
-        && latestVolume > averageVolume
+        action = 'BUY';
+    } else if (
+        latestMACD.MACD < latestMACD.signal
+        && latestRSI > 70
+        // && lastShortTermMA < lastLongTermMA
+        // && latestVolume > averageVolume
     ) {
         action = 'SELL'; // MACD cắt xuống, MA ngắn hạn cắt xuống dưới MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng giảm mạnh
     }
-
-    utils.customLog(`Latest RSI: ${latestRSI} (<50 => ${utils.FgYellow}${latestRSI < 50}${utils.Reset})`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`);
+    utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long=>BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}))`);
+    utils.customLog(`Latest RSI: ${latestRSI} (>50=> ${utils.FgYellow}${latestRSI > 50}${utils.Reset})`);
     utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
-    utils.customLog(`lastShortTermMA: ${shortTermMA[shortTermMA.length - 1]}, lastLongTermMA: ${longTermMA[longTermMA.length - 1]} (Short>Long=>BUY(${utils.FgYellow}${shortTermMA[shortTermMA.length - 1] > longTermMA[longTermMA.length - 1]}${utils.Reset}))`);
+    utils.customLog(`OR....`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`);
+    utils.customLog(`latestRSI: ${latestRSI}(<30=> BUY(${utils.FgYellow}${latestRSI < 30}${utils.Reset}))`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
     return action;
 };
@@ -312,7 +319,7 @@ const roundQuantity = (quantity, stepSize) => {
 };
 
 // Hàm tính phí giao dịch 0.1% trên Binance
-const calculateFee = (quantity, feePercentage = 0.001) => {
+const calculateFee = (quantity, feePercentage = 0.002) => {
     return quantity * feePercentage;
 };
 
@@ -445,8 +452,19 @@ const monitorMarketAndAdjustStopLoss = async (symbol) => {
 
         const latestClose = closePrices[closePrices.length - 1];
         const latestADX = adx[adx.length - 1];
-        const averageVolume = SMA.calculate({ period: 20, values: volumes });
+        // const averageVolume = SMA.calculate({ period: 20, values: volumes });
+        const averageVolume = common_func.calculateAverageVolume(volumes, 20); // Tính toán volume trung bình trong 20 kỳ
         const latestVolume = volumes[volumes.length - 1];
+
+        const rsi = RSI.calculate({ period: 14, values: closePrices });
+        const atr = ATR.calculate({ period: 14, high: highPrices, low: lowPrices, close: closePrices });
+        const lastRSI = rsi[rsi.length - 1];
+        const lastATR = atr[atr.length - 1];
+
+        const shortTermMA = SMA.calculate({ period: 9, values: closePrices });
+        const longTermMA = SMA.calculate({ period: 21, values: closePrices });
+        const lastShortTermMA = shortTermMA[shortTermMA.length - 1];
+        const lastLongTermMA = longTermMA[longTermMA.length - 1];
 
         // utils.customLog(`Latest ADX: ${latestADX.adx},Latest/Average Volume: ${latestVolume}/${averageVolume[averageVolume.length - 1]} (if ADX > 25)`);
 
@@ -471,8 +489,25 @@ const monitorMarketAndAdjustStopLoss = async (symbol) => {
         const latestMACD = macd[macd.length - 1];
 
         // Điều kiện để đặt stop loss nếu RSI cho thấy thị trường có xu hướng đảo chiều
-        utils.customLog(`Current RSI: ${latestRSI} (>70: ${utils.FgYellow}${latestRSI > 70}${utils.Reset}), (MACD < signal: ${utils.FgYellow}${latestMACD.MACD < latestMACD.signal}${utils.Reset})`);
-        if (latestRSI > 70 && latestMACD.MACD < latestMACD.signal) {
+        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short<Long=>SELL(${utils.FgYellow}${lastShortTermMA < lastLongTermMA}${utils.Reset}))`);
+        utils.customLog(`Latest RSI: ${latestRSI} (<50 && >30=>SELL ${utils.FgYellow}${latestRSI < 50 && latestRSI > 30}${utils.Reset})`);
+        utils.customLog(`OR....`);
+        utils.customLog(`latestRSI: ${latestRSI}(>70=>SELL(${utils.FgYellow}${latestRSI > 70}${utils.Reset}))`);
+        utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD < signal=>SELL(${utils.FgYellow}${latestMACD.MACD < latestMACD.signal}${utils.Reset}))`);
+        utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
+        if (
+            (
+                lastShortTermMA < lastLongTermMA
+                && lastRSI < 50
+                && lastRSI > 30
+            )
+            ||
+            (
+                latestRSI > 70
+                && latestMACD.MACD < latestMACD.signal
+                && latestVolume > averageVolume
+            )
+        ) {
             utils.customLog('RSI indicates overbought, potential for price reversal.');
             stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
             utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
@@ -489,6 +524,6 @@ const monitorMarketAndAdjustStopLoss = async (symbol) => {
 
 module.exports = {
     client, getHistoricalDataCustom,
-    monitorMarketAndAdjustStopLoss, determineTrendReversal, detectSuddenMove, determineTrendAndSignal,
+    monitorMarketAndAdjustStopLoss, detectSuddenMove, determineTrendAndSignal,
     closeAllSpotOrders, spotOrder, getSpotBalance, placeSpotOrder
 };
