@@ -410,7 +410,7 @@ const calculateAverageVolume = (volumes, period) => {
     return sum / period;
 };
 
-const confirmMarketStatus = async (symbol, currentPrice) => {
+const confirmMarketStatus = async (symbol) => {
     try {
         const data = await getHistoricalDataCustom(symbol, '15m', 21);
 
@@ -455,8 +455,8 @@ const confirmMarketStatus = async (symbol, currentPrice) => {
             stopLoss = latestClose + (1.5 * lastATR);
             takeProfit = latestClose - (1.5 * lastATR);
         }
-        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), else => SELL(${utils.FgYellow}${lastShortTermMA < lastLongTermMA}${utils.Reset}))`);
-        utils.customLog(`lastRSI: ${lastRSI}, (> 50 => BUY(${utils.FgYellow}${lastRSI > 50}${utils.Reset}), else => SELL)`);
+        utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long => BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}), SELL(${utils.FgYellow}${lastShortTermMA < lastLongTermMA}${utils.Reset}))`);
+        utils.customLog(`lastRSI: ${lastRSI}, (> 50 => BUY(${utils.FgYellow}${lastRSI > 50}${utils.Reset}), SELL(${utils.FgYellow}${lastRSI < 50 && lastRSI > 30}${utils.Reset}))`);
         utils.customLog(`lastest volume: ${latestVolume},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset}))`);
         utils.customLog(`→　New suggest action: ${utils.FgYellow}${action}${utils.Reset}`);
         return { action, stopLoss, takeProfit };
@@ -496,7 +496,7 @@ const getLastClosedPosition = async (symbol) => {
         const closedTrades = trades.filter(trade => trade.realizedPnl !== '0');
 
         if (closedTrades.length === 0) {
-            console.log('Không có vị thế nào đã đóng.');
+            utils.customLog('Không có vị thế nào đã đóng.');
             return null;
         }
 
@@ -650,19 +650,18 @@ const determineTrendReversal = async (symbol) => {
 
     // Phân tích RSI và MACD để xác định xu hướng đảo chiều
     // if ((latestRSI > 65 || latestMACD.MACD < latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    if ((latestRSI > 70 || latestMACD.MACD < latestMACD.signal) 
+    if ((latestRSI > 70 || latestMACD.MACD < latestMACD.signal)
         && latestVolume > averageVolume) {
         // Quá mua, MACD cho tín hiệu bán, khối lượng tăng và biến động tăng
         action = 'SELL';
         // } else if ((latestRSI < 35 || latestMACD.MACD > latestMACD.signal) && latestATR > atr[atr.length - 2]) {
-    } else if (latestRSI < 30 
+    } else if (latestRSI < 30
         || latestMACD.MACD > latestMACD.signal) {
         // Quá bán, MACD cho tín hiệu mua, khối lượng tăng và biến động tăng
         action = 'BUY';
     }
-    // console.log(`Action: ${action}`);
-    utils.customLog(`Latest RSI: ${latestRSI} (>70 => SELL, <35 => BUY)`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}), else => SELL)`);
+    utils.customLog(`Latest RSI: ${latestRSI} (>70 => SELL(${utils.FgYellow}${latestRSI > 70}${utils.Reset}), <35 => BUY(${utils.FgYellow}${latestRSI < 35}${utils.Reset}))`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}), SELL(${utils.FgYellow}${latestMACD.MACD < latestMACD.signal})`);
     // utils.customLog(`Latest ATR: ${latestATR}, atr[atr.length - 2]: ${atr[atr.length - 2]}`);
     return action;
 };

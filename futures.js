@@ -4,11 +4,15 @@ const { SMA, RSI, ATR } = require('technicalindicators');
 var common_func = require('./common.js');
 var utils = require('./utils');
 
-const symbol = 'SUIUSDT' //'BTCUSDT' SUIUSDT; // Replace with the symbol of the coin you want to check
+const symbol_arr = ['PEPEUSDT', 'SUIUSDT'];
+const future_symbol_arr = ['1000PEPEUSDT', 'SUIUSDT'];
+
+const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
+const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
 const asset = 'USDT';
 const leverage = 10;
 
-let marketHistory = [];
+let marketHistory = {};
 
 // Thiết lập mức đòn bẩy (Leverage)
 const setLeverage = async (symbol, leverage) => {
@@ -24,7 +28,7 @@ const setLeverage = async (symbol, leverage) => {
     }
 };
 
-const futuresTrade = async () => {
+const futuresTrade = async (symbol, future_symbol) => {
     utils.customLog('\n');
     var currentdate = new Date();
     var currentPrice = await common_func.getPrice(symbol);
@@ -32,14 +36,14 @@ const futuresTrade = async () => {
     utils.customLog(`The current price of ${symbol} is ${currentPrice}`);
 
     utils.customLog(`${utils.BgMagenta}Confirm market status${utils.Reset}`);
-    let marketStatus = await common_func.confirmMarketStatus(symbol, currentPrice);
-    if (marketStatus == null) {
+    let marketStatus = await common_func.confirmMarketStatus(future_symbol);
+    if (marketHistory[symbol] == null) {
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     } else {
-        marketHistory.push(marketStatus);
-        if (marketHistory.length > 4) {
-            marketHistory.shift();
+        marketHistory[symbol].push(marketStatus);
+        if (marketHistory[symbol].length > 4) {
+            marketHistory[symbol].shift();
         }
     }
 
@@ -61,9 +65,9 @@ const futuresTrade = async () => {
 
     // Check previous trade is lose or win
     utils.customLog(`${utils.BgMagenta}Check previous trade is lose or win...${utils.Reset}`);
-    let lastClosedTrade = await common_func.getLastClosedPosition(symbol);
-    let realizedPnl = parseFloat(lastClosedTrade.realizedPnl);
-    if (realizedPnl < 0) {
+    let lastClosedTrade = await common_func.getLastClosedPosition(future_symbol);
+    let realizedPnl = parseFloat(lastClosedTrade?.realizedPnl);
+    if (realizedPnl != null && realizedPnl < 0) {
         // Check time of last trade
         let lastestTime = new Date(lastClosedTrade.time);
         let diffMs = currentdate - lastestTime;
@@ -79,7 +83,7 @@ const futuresTrade = async () => {
 
     // Check market history
     utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
-    if (marketHistory.length < 4) {
+    if (marketHistory[symbol].length < 4) {
         utils.customLog(`→ Not enough number of time of action => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
@@ -88,8 +92,8 @@ const futuresTrade = async () => {
         let holdTimes = 0;
 
         let _action = null;
-        for (let index = 0; index < marketHistory.length; index++) {
-            const element = marketHistory[index];
+        for (let index = 0; index < marketHistory[symbol].length; index++) {
+            const element = marketHistory[symbol][index];
             let currentAction = element.action;
             if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
                 isOut = true;
@@ -110,11 +114,11 @@ const futuresTrade = async () => {
             // utils.customLog(`→ Action has the continuity => continue;`);
         }
         // Remove first action out of array
-        marketHistory.shift();
+        marketHistory[symbol].shift();
     }
 
     utils.customLog(`${utils.BgMagenta}Start check suddenMove..${utils.Reset}`);
-    const suddenMove = await common_func.detectSuddenMove(symbol);
+    const suddenMove = await common_func.detectSuddenMove(future_symbol);
     if (suddenMove) {
         utils.customLog(`${utils.FgYellow}Sudden price move detected! Consider taking action. => exit;${utils.Reset}`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -124,7 +128,7 @@ const futuresTrade = async () => {
     }
 
     utils.customLog(`${utils.BgMagenta}Start determine Trend Reversal..${utils.Reset}`);
-    let trendAction = await common_func.determineTrendReversal(symbol);
+    let trendAction = await common_func.determineTrendReversal(future_symbol);
     utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}${utils.Reset}`);
     utils.customLog(`Trend Reversalaction: ${utils.FgYellow}${trendAction}${utils.Reset}`);
     if (trendAction != marketStatus.action && trendAction != "HOLD") {
@@ -154,8 +158,8 @@ const futuresTrade = async () => {
     }
 
     // Thiết lập đòn bẩy Leverage
-    await setLeverage(symbol, leverage);
-    await common_func.determineTradeAction(symbol, quantity, currentPrice, marketStatus);
+    await setLeverage(future_symbol, leverage);
+    await common_func.determineTradeAction(future_symbol, quantity, currentPrice, marketStatus);
 
     utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
 }
@@ -164,16 +168,27 @@ const sendReport = async () => {
     await utils.sendMail('test');
 }
 
+const futuresTradeAll = async () => {
+    for (let index = 0; index < symbol_arr.length; index++) {
+        const coinCode = symbol_arr[index];
+        const coinFuturesCode = future_symbol_arr[index];
+        if (marketHistory[coinCode] == undefined) {
+            marketHistory[coinCode] = [];
+        }
+        await futuresTrade(coinCode, coinFuturesCode);
+    }
+}
+
 // Example usage
 const main = async () => {
     var i = 1;
     var timmer = 1000 * 60 * 4; // 15 minutes
     // var timmer = 1000 * 5; // 15 minutes
-    futuresTrade();
+    futuresTradeAll();
     function futuresLoop() {
         console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
         setTimeout(function () {
-            futuresTrade();
+            futuresTradeAll();
             i++;
             futuresLoop();
         }, timmer)
@@ -181,7 +196,7 @@ const main = async () => {
     futuresLoop();
 
     // Send report mail
-    var sendReportMailTimmer = 1000 * 62 * 15; // 16 minutes
+    var sendReportMailTimmer = 1000 * 62 * 30; // 16 minutes
     function sendReportMail() {
         setTimeout(function () {
             sendReport();

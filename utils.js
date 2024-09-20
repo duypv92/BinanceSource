@@ -81,6 +81,8 @@ const replaceString = (msg) => {
     //     replaceString(result);
     // }
     result = result.replace("[0m", '');
+    result = result.replace("[0m)", '')
+    result = result.replace("[33m", '');
     return result;
 }
 
@@ -94,7 +96,7 @@ const sendMail = async (msg) => {
             user: 'duypv250592@gmail.com',
             pass: 'ruzb mujq hjrv zdlj'
         }
-      })
+    })
 
     var mailOptions = {
         from: 'duypv250592@gmail.com',

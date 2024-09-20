@@ -234,12 +234,12 @@ const determineTrendAndSignal = async (symbol) => {
 
     // Kiểm tra xu hướng tăng hoặc giảm dựa vào MACD, MA và Volume
     if (
-        (
-            lastShortTermMA > lastLongTermMA
-            && latestRSI > 50
-            && latestVolume > averageVolume
-        )  // MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
-        ||
+        // (
+        //     lastShortTermMA > lastLongTermMA
+        //     && latestRSI > 50
+        //     && latestVolume > averageVolume
+        // )  // MA ngắn hạn cắt lên trên MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng tăng mạnh
+        // ||
         (
             latestRSI < 30
             && latestMACD.MACD > latestMACD.signal
@@ -254,10 +254,10 @@ const determineTrendAndSignal = async (symbol) => {
     ) {
         action = 'SELL'; // MACD cắt xuống, MA ngắn hạn cắt xuống dưới MA dài hạn, và khối lượng giao dịch lớn hơn trung bình -> xu hướng giảm mạnh
     }
-    utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long=>BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}))`);
-    utils.customLog(`Latest RSI: ${latestRSI} (>50=> ${utils.FgYellow}${latestRSI > 50}${utils.Reset})`);
-    utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
-    utils.customLog(`OR....`);
+    // utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long=>BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}))`);
+    // utils.customLog(`Latest RSI: ${latestRSI} (>50=> ${utils.FgYellow}${latestRSI > 50}${utils.Reset})`);
+    // utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
+    // utils.customLog(`OR....`);
     utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`);
     utils.customLog(`latestRSI: ${latestRSI}(<30=> BUY(${utils.FgYellow}${latestRSI < 30}${utils.Reset}))`);
     utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
@@ -319,7 +319,7 @@ const roundQuantity = (quantity, stepSize) => {
 };
 
 // Hàm tính phí giao dịch 0.1% trên Binance
-const calculateFee = (quantity, feePercentage = 0.002) => {
+const calculateFee = (quantity, feePercentage = 0.004) => {
     return quantity * feePercentage;
 };
 
