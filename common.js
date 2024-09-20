@@ -661,7 +661,7 @@ const determineTrendReversal = async (symbol) => {
         action = 'BUY';
     }
     utils.customLog(`Latest RSI: ${latestRSI} (>70 => SELL(${utils.FgYellow}${latestRSI > 70}${utils.Reset}), <35 => BUY(${utils.FgYellow}${latestRSI < 35}${utils.Reset}))`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}), SELL(${utils.FgYellow}${latestMACD.MACD < latestMACD.signal})`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, latestMACD.signal: ${latestMACD.signal} (MACD>signal => BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}), SELL(${utils.FgYellow}${latestMACD.MACD < latestMACD.signal}${utils.Reset})`);
     // utils.customLog(`Latest ATR: ${latestATR}, atr[atr.length - 2]: ${atr[atr.length - 2]}`);
     return action;
 };
