@@ -146,7 +146,7 @@ const futuresTrade = async (symbol, future_symbol) => {
         utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in Futures Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
         if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
-            balance = ((parseFloat(balance) * 50) / 100) * 10;
+            balance = ((parseFloat(balance) * 40) / 100) * 10;
             quantity = Number(Number(balance / currentPrice).toFixed(2));
             utils.customLog(`quantity to order: ${quantity}`);
         } else {
@@ -160,7 +160,7 @@ const futuresTrade = async (symbol, future_symbol) => {
 
     // Thiết lập đòn bẩy Leverage
     await setLeverage(future_symbol, leverage);
-    await common_func.determineTradeAction(future_symbol, quantity, currentPrice, marketStatus);
+    await common_func.determineTradeAction(future_symbol, quantity, currentPrice, marketStatus, future_symbol);
 
     utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
 }

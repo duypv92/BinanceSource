@@ -258,9 +258,9 @@ const determineTrendAndSignal = async (symbol) => {
     // utils.customLog(`Latest RSI: ${latestRSI} (>50=> ${utils.FgYellow}${latestRSI > 50}${utils.Reset})`);
     // utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
     // utils.customLog(`OR....`);
-    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`);
-    utils.customLog(`latestRSI: ${latestRSI}(<30=> BUY(${utils.FgYellow}${latestRSI < 30}${utils.Reset}))`);
-    utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`);
+    utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`, true);
+    utils.customLog(`latestRSI: ${latestRSI}(<30=> BUY(${utils.FgYellow}${latestRSI < 30}${utils.Reset}))`, true);
+    utils.customLog(`→　Suggest Action: ${utils.FgYellow}${action}${utils.Reset}`, true);
     return action;
 };
 

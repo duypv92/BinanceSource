@@ -8,12 +8,13 @@ const asset_USDT = 'USDT';
 const asset = 'PEPE'; // SUI
 
 const spotTrade = async () => {
+    utils.customLog('\n');
     var currentdate = new Date();
     var currentPrice = await common_func.getPrice(symbol);
-    utils.customLog(`${utils.FgGreen}-----------${currentdate} **************START***************-----------${utils.Reset}`);
-    utils.customLog(`The current price of ${symbol} is ${currentPrice}`);
+    utils.customLog(`${utils.FgGreen}-----------${currentdate} **************START***************-----------${utils.Reset}`, true);
+    utils.customLog(`The current price of ${symbol} is ${currentPrice}`, true);
 
-    utils.customLog(`${utils.BgMagenta}Determine Trend And Signal${utils.Reset}`);
+    utils.customLog(`${utils.BgMagenta}Determine Trend And Signal${utils.Reset}`, true);
     let suggestAction = await spot_common_func.determineTrendAndSignal(future_symbol);
 
     utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in spot${utils.Reset}`);
@@ -28,7 +29,7 @@ const spotTrade = async () => {
     // If action is hold, doing nothing.
     if (suggestAction == "HOLD" || suggestAction == "SELL") {
         utils.customLog(`→ Market's status is ${utils.FgYellow} HOLD/SELL ${utils.Reset} => exit;`);
-        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`, true);
         return;
     }
 
@@ -56,7 +57,11 @@ const spotTrade = async () => {
 
     // Place new spot
     await spot_common_func.placeSpotOrder(symbol, "BUY", quantity);
-    utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+    utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`, true);
+}
+
+const sendReport = async () => {
+    await utils.sendAnotherMail('test');
 }
 
 // Example usage
@@ -74,6 +79,16 @@ const main = async () => {
         }, timmer)
     }
     spotLoop();
+
+     // Send report mail
+     var sendReportMailTimmer = 1000 * 61 * 7; // 15 minutes
+     function sendReportMail() {
+         setTimeout(function () {
+             sendReport();
+             sendReportMail();
+         }, sendReportMailTimmer)
+     }
+     sendReportMail();
 };
 
 main();

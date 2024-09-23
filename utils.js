@@ -47,25 +47,29 @@ const formatDate = (inputDate, format) => {
     return format.replace(/yyyy|MM|dd|HH|hh|mm|ss|tt/g, (match) => parts[match]);
 }
 
-const customLog = (message) => {
+const customLog = (message, sendAnorderMail = false) => {
     let currentTime = new Date();
     var dateString = formatDate(currentTime, 'yyyy/MM/dd hh:mm:ss');
     console.log(FgBlue + `-${dateString} ${Reset}: ${message}`);
-    writeLogFile(`-${dateString} : ${message}`);
+    writeLogFile(`-${dateString} : ${message}`, sendAnorderMail);
 }
 
 
-const writeLogFile = async (msg) => {
+const writeLogFile = async (msg, sendAnorderMail) => {
     let custom_msg = replaceString(msg + '\n');
-    // if(custom_msg.includes('\x1b')){
-    //     const indexOfFirst = custom_msg.search('\x1b');
-    //     console.log(indexOfFirst);
-    // }
     fs.appendFile("/tmp/log.log", custom_msg, function (err) {
         if (err) {
             return console.log(err);
         }
     });
+    if (sendAnorderMail == true) {
+        fs.appendFile("/tmp/status.log", custom_msg, function (err) {
+            if (err) {
+                return console.log(err);
+            }
+        });
+    }
+
 }
 
 const replaceString = (msg) => {
@@ -75,11 +79,6 @@ const replaceString = (msg) => {
         const lastIndex = firstIndex + 5;
         result = msg.slice(0, firstIndex) + msg.slice(lastIndex);
     }
-    // if(result.includes('\x1b')){
-    //     // console.log('exites');
-    //     // console.log(result);
-    //     replaceString(result);
-    // }
     result = result.replace("[0m", '');
     result = result.replace("[0m)", '')
     result = result.replace("[33m", '');
@@ -120,8 +119,42 @@ const sendMail = async (msg) => {
     });
 }
 
+const sendAnotherMail = async (msg) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: 'duypv250592@gmail.com',
+            pass: 'ruzb mujq hjrv zdlj'
+        }
+    })
+
+    var mailOptions = {
+        from: 'duypv250592@gmail.com',
+        to: ['duypv@outlook.com', 'juliatrang4993@gmail.com'],
+        subject: 'Report from binance tool',
+        text: 'Market status!',
+        attachments: [
+            {   // file on disk as an attachment
+                filename: 'status.txt',
+                path: '/tmp/status.log' // stream this file
+            }
+        ]
+    };
+
+    await transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+}
+
 module.exports = {
-    formatDate, customLog, writeLogFile, sendMail,
+    formatDate, customLog, writeLogFile, sendMail, sendAnotherMail,
     Reset,
     Bright,
     Dim,

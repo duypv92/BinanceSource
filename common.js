@@ -202,7 +202,7 @@ const getCurrentPrice = async (symbol) => {
     }
 };
 
-const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, currentPrice) => {
+const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, currentPrice, future_symbol) => {
     try {
 
         const { pricePrecision, quantityPrecision } = await getPrecision(symbol);
@@ -211,6 +211,11 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
         // Làm tròn số lượng và tính toán giá trị lệnh
         let roundedQuantity = roundToPrecision(quantity, quantityPrecision);
         let orderValue = roundedQuantity * currentPrice;
+
+        if (future_symbol.includes('1000')) {
+            quantity = quantity / 1000;
+            roundedQuantity = roundToPrecision(quantity, quantityPrecision);
+        }
 
         utils.customLog(`-------`);
         // utils.customLog(`before round quantity: ${quantity}`);
@@ -475,7 +480,7 @@ const confirmMarketStatus = async (symbol) => {
     }
 }
 
-const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus) => {
+const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus, future_symbol) => {
     try {
         utils.customLog(`${utils.FgYellow} ◆◆◆◆◆SUMMARY◆◆◆◆◆ ${utils.Reset}`);
         utils.customLog(`price: ${currentPrice}`);
@@ -487,7 +492,7 @@ const determineTradeAction = async (symbol, quantity, currentPrice, marketStatus
         // utils.customLog(`Loss difference: ${marketStatus.stopLoss - currentPrice}`);
         // Thực hiện lệnh nếu xác định hành động là BUY hoặc SELL
         if (marketStatus.action !== 'HOLD') {
-            await futuresOrder(symbol, marketStatus.action, quantity, marketStatus.stopLoss, marketStatus.takeProfit, currentPrice);
+            await futuresOrder(symbol, marketStatus.action, quantity, marketStatus.stopLoss, marketStatus.takeProfit, currentPrice, future_symbol);
         } else {
             utils.customLog(`HOLD => wait for next run!...`);
         }
