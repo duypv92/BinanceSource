@@ -277,7 +277,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
     }
 };
 
-const closeAllPositionsAndOrders = async (currentAction) => {
+const closeAllPositionsAndOrders = async (future_symbol) => {
     try {
         let isStop = false;
         // Bước 2: Đóng tất cả các vị thế mở
@@ -291,90 +291,95 @@ const closeAllPositionsAndOrders = async (currentAction) => {
             isStop = true;
             utils.customLog('No open positions found.');
         } else {
-            for (const position of openPositions) {
-                const { symbol, positionAmt, entryPrice, markPrice } = position;
-                // Tính toán lãi/lỗ chưa thực hiện nếu không có sẵn
-                let unrealizedProfit = parseFloat(position.unrealizedProfit);
-                if (isNaN(unrealizedProfit)) {
-                    unrealizedProfit = (parseFloat(markPrice) - parseFloat(entryPrice)) * parseFloat(positionAmt);
-                }
-                // console.log(position);
-                const notionalValue = Math.abs(positionAmt) * parseFloat(markPrice); // Giá trị danh nghĩa (notional value)
-                const closingFee = notionalValue * takerFeeRate;
+            let currentPositions = openPositions.filter(position => position.symbol == future_symbol);
+            if (currentPositions.length == 0) {
+                isStop = true;
+            } else {
+                for (const position of currentPositions) {
+                    const { symbol, positionAmt, entryPrice, markPrice } = position;
+                    // Tính toán lãi/lỗ chưa thực hiện nếu không có sẵn
+                    let unrealizedProfit = parseFloat(position.unrealizedProfit);
+                    if (isNaN(unrealizedProfit)) {
+                        unrealizedProfit = (parseFloat(markPrice) - parseFloat(entryPrice)) * parseFloat(positionAmt);
+                    }
+                    // console.log(position);
+                    const notionalValue = Math.abs(positionAmt) * parseFloat(markPrice); // Giá trị danh nghĩa (notional value)
+                    const closingFee = notionalValue * takerFeeRate;
 
-                // Tính lãi/lỗ sau khi trừ phí
-                const pnlAfterFees = unrealizedProfit - closingFee;
-                const entryValue = Math.abs(parseFloat(positionAmt)) * parseFloat(entryPrice);
-                const pnlPercentageAfterFees = (pnlAfterFees / entryValue) * 100;
+                    // Tính lãi/lỗ sau khi trừ phí
+                    const pnlAfterFees = unrealizedProfit - closingFee;
+                    const entryValue = Math.abs(parseFloat(positionAmt)) * parseFloat(entryPrice);
+                    const pnlPercentageAfterFees = (pnlAfterFees / entryValue) * 100;
 
-                // utils.customLog(`Symbol: ${symbol}`);
-                utils.customLog(`positionAmt: ${Number(positionAmt)}`);
-                utils.customLog(`${utils.FgGreen}Unrealized PnL:${utils.Reset} ${unrealizedProfit.toFixed(2)} USD`);
-                utils.customLog(`Closing Fee: ${closingFee} USD`);
-                utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
-                // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-                // if (parseFloat(positionAmt) > 0) {
-                //     if (currentAction == 'SELL') {
-                //         isStop = true;
-                //         utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
-                //     }
-                // } else {
-                //     if (currentAction == 'BUY') {
-                //         isStop = true;
-                //         utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
-                //     }
-                // }
-                if (isStop == false) {
-                    if (unrealizedProfit < 0) {
-                        utils.customLog('→ Are losing money');
-                        // Check time of position is > 30 minutes or not
-                        let orderedTime = new Date(position.updateTime);
-                        let currentdate = new Date();
-                        let diffMs = currentdate - orderedTime;
-                        let diffMins = diffMs / 60000; // minutes
-                        if (diffMins > 15) {   // If > 30 minutes
-                            utils.customLog(`${utils.BgMagenta}Checking market status for define stop loss...${utils.Reset}`);
-                            let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
-                            if (newStopLoss != null) {
-                                // If market price have a large change => stop loss.
-                                isStop = true;
+                    // utils.customLog(`Symbol: ${symbol}`);
+                    utils.customLog(`positionAmt: ${Number(positionAmt)}`);
+                    utils.customLog(`${utils.FgGreen}Unrealized PnL:${utils.Reset} ${unrealizedProfit.toFixed(2)} USD`);
+                    utils.customLog(`Closing Fee: ${closingFee} USD`);
+                    utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
+                    // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
+                    // if (parseFloat(positionAmt) > 0) {
+                    //     if (currentAction == 'SELL') {
+                    //         isStop = true;
+                    //         utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
+                    //     }
+                    // } else {
+                    //     if (currentAction == 'BUY') {
+                    //         isStop = true;
+                    //         utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
+                    //     }
+                    // }
+                    if (isStop == false) {
+                        if (unrealizedProfit < 0) {
+                            utils.customLog('→ Are losing money');
+                            // Check time of position is > 30 minutes or not
+                            let orderedTime = new Date(position.updateTime);
+                            let currentdate = new Date();
+                            let diffMs = currentdate - orderedTime;
+                            let diffMins = diffMs / 60000; // minutes
+                            if (diffMins > 15) {   // If > 30 minutes
+                                utils.customLog(`${utils.BgMagenta}Checking market status for define stop loss...${utils.Reset}`);
+                                let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol, positionAmt);
+                                if (newStopLoss != null) {
+                                    // If market price have a large change => stop loss.
+                                    isStop = true;
+                                } else {
+                                    isStop = false;
+                                }
                             } else {
                                 isStop = false;
                             }
-                        } else {
-                            isStop = false;
-                        }
-                    } else if (unrealizedProfit > closingFee) {
-                        if (unrealizedProfit >= (closingFee * 2)) {
-                            isStop = true;
-                            utils.customLog(`${utils.FgYellow}→ Take profit${utils.Reset}`);
+                        } else if (unrealizedProfit > closingFee) {
+                            if (unrealizedProfit >= (closingFee * 2)) {
+                                isStop = true;
+                                utils.customLog(`${utils.FgYellow}→ Take profit${utils.Reset}`);
+                            } else {
+                                utils.customLog('→ Not enough profit!!');
+                            }
                         } else {
                             utils.customLog('→ Not enough profit!!');
                         }
-                    } else {
-                        utils.customLog('→ Not enough profit!!');
                     }
+
+                    if (isStop == false) {
+                        utils.customLog('→ Keep hold current position.....');
+                        return;
+                    }
+
+                    const quantity = Math.abs(parseFloat(positionAmt));
+                    const closingSide = parseFloat(positionAmt) > 0 ? 'SELL' : 'BUY';
+
+                    utils.customLog(`Closing position for ${symbol}: ${closingSide} ${quantity}`);
+
+                    // Đặt lệnh ngược lại để đóng vị thế
+                    const order = await client.futuresOrder({
+                        symbol: symbol,
+                        side: closingSide,
+                        type: 'MARKET',
+                        quantity: quantity,
+                    });
+
+                    utils.customLog(`Closed ${symbol} position: updateTime ${order.updateTime}`);
                 }
-
-                if (isStop == false) {
-                    utils.customLog('→ Keep hold current position.....');
-                    return;
-                }
-
-                const quantity = Math.abs(parseFloat(positionAmt));
-                const closingSide = parseFloat(positionAmt) > 0 ? 'SELL' : 'BUY';
-
-                utils.customLog(`Closing position for ${symbol}: ${closingSide} ${quantity}`);
-
-                // Đặt lệnh ngược lại để đóng vị thế
-                const order = await client.futuresOrder({
-                    symbol: symbol,
-                    side: closingSide,
-                    type: 'MARKET',
-                    quantity: quantity,
-                });
-
-                utils.customLog(`Closed ${symbol} position: updateTime ${order.updateTime}`);
             }
             utils.customLog('All positions closed.');
         }
@@ -382,16 +387,20 @@ const closeAllPositionsAndOrders = async (currentAction) => {
         if (isStop == false) return;
         // Bước 1: Hủy tất cả các lệnh chờ
         const openOrders = await client.futuresOpenOrders();
-
         if (openOrders.length === 0) {
             isStop = true;
             utils.customLog('No open orders found.');
         } else {
-            for (const order of openOrders) {
-                const { symbol, orderId } = order;
+            let currentOrders = openOrders.filter(position => position.symbol == future_symbol);
+            if (currentOrders.length == 0) {
+                isStop = true;
+            } else {
+                for (const order of currentOrders) {
+                    const { symbol, orderId } = order;
 
-                await client.futuresCancelOrder({ symbol, orderId });
-                utils.customLog(`Cancelled order ${orderId} for symbol ${symbol}`);
+                    await client.futuresCancelOrder({ symbol, orderId });
+                    utils.customLog(`Cancelled order ${orderId} for symbol ${symbol}`);
+                }
             }
             utils.customLog('All open orders cancelled.');
         }

@@ -7,8 +7,9 @@ var utils = require('./utils');
 const symbol_arr = ['PEPEUSDT', 'SUIUSDT'];
 const future_symbol_arr = ['1000PEPEUSDT', 'SUIUSDT'];
 
-const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
-const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
+// const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
+// const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
+
 const asset = 'USDT';
 const leverage = 10;
 
@@ -49,7 +50,7 @@ const futuresTrade = async (symbol, future_symbol) => {
 
     // Close All Positions And Orders in futures
     utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in futures${utils.Reset}`);
-    let isStop = await common_func.closeAllPositionsAndOrders(marketStatus.action);
+    let isStop = await common_func.closeAllPositionsAndOrders(future_symbol);
     if (!isStop) {
         utils.customLog("→ Stop renew futures requests => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -183,7 +184,6 @@ const futuresTradeAll = async () => {
 const main = async () => {
     var i = 1;
     var timmer = 1000 * 60 * 4; // 15 minutes
-    // var timmer = 1000 * 5; // 15 minutes
     futuresTradeAll();
     function futuresLoop() {
         console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
@@ -196,7 +196,7 @@ const main = async () => {
     futuresLoop();
 
     // Send report mail
-    var sendReportMailTimmer = 1000 * 62 * 30; // 16 minutes
+    var sendReportMailTimmer = 1000 * 62 * 45; // 16 minutes
     function sendReportMail() {
         setTimeout(function () {
             sendReport();

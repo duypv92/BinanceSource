@@ -71,7 +71,7 @@ const spotOrder = async (symbol, side, quantity, stopLoss, takeProfit, currentPr
     }
 };
 
-const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
+const closeAllSpotOrders = async (symbol, currentAction, currentPrice, asset, future_symbol) => {
     try {
         let isStop = false;
         let lastestSpot = await getLatestSpotOrder(symbol);
@@ -92,16 +92,16 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
             isStop = true;
             utils.customLog(`${utils.FgRed} New suggest action is SELL => Stop as soon as posible${utils.Reset}`);
             // If market price have a large change => stop loss.
-            await placeSellOrder(symbol, 'SUI');
+            await placeSellOrder(symbol, asset);
             return isStop;
         }
 
         if (profitLoss < 0) {
             utils.customLog(`${utils.BgMagenta}Checking market status for define stop loss...${utils.Reset}`);
-            let newStopLoss = await monitorMarketAndAdjustStopLoss(symbol);
+            let newStopLoss = await monitorMarketAndAdjustStopLoss(future_symbol);
             if (newStopLoss != null) {
                 // If market price have a large change => stop loss.
-                await placeSellOrder(symbol, 'SUI');
+                await placeSellOrder(symbol, asset);
                 isStop = true;
             } else {
                 utils.customLog('→ Are losing money → Keep hold');
@@ -115,7 +115,7 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice) => {
             utils.customLog(`Closing Fee: ${closingFee} USD`);
             if (profitLoss >= (closingFee * 8)) {
                 utils.customLog(`${utils.FgYellow}→ Take profit${utils.Reset}`);
-                await placeSellOrder(symbol, 'SUI');
+                await placeSellOrder(symbol, asset);
                 isStop = true;
             } else {
                 utils.customLog('→ Not enough profit!! → Keep hold');

@@ -1,16 +1,11 @@
-const axios = require('axios');
-const Binance = require('binance-api-node').default;
-const { SMA, RSI, ATR } = require('technicalindicators');
 var common_func = require('./common.js');
 var spot_common_func = require('./spot-common.js');
 var utils = require('./utils.js');
 
-const symbol = 'SUIUSDT' //'BTCUSDT' SUIUSDT; // Replace with the symbol of the coin you want to check
-const asset = 'USDT';
-const leverage = 10;
-
-let marketHistory = [];
-
+const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
+const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
+const asset_USDT = 'USDT';
+const asset = 'PEPE'; // SUI
 
 const spotTrade = async () => {
     var currentdate = new Date();
@@ -19,11 +14,11 @@ const spotTrade = async () => {
     utils.customLog(`The current price of ${symbol} is ${currentPrice}`);
 
     utils.customLog(`${utils.BgMagenta}Determine Trend And Signal${utils.Reset}`);
-    let suggestAction = await spot_common_func.determineTrendAndSignal(symbol);
+    let suggestAction = await spot_common_func.determineTrendAndSignal(future_symbol);
 
     utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in spot${utils.Reset}`);
     // Close All Positions And Orders in spot
-    let isStop = await spot_common_func.closeAllSpotOrders(symbol, suggestAction, currentPrice);
+    let isStop = await spot_common_func.closeAllSpotOrders(symbol, suggestAction, currentPrice, asset, future_symbol);
     if (!isStop) {
         utils.customLog("→ Stop renew spot order requests => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -39,10 +34,10 @@ const spotTrade = async () => {
 
     utils.customLog(`→${utils.BgMagenta}Start new order${utils.Reset}`);
      // get balance spot
-     var balance = await spot_common_func.getSpotBalance(asset);
+     var balance = await spot_common_func.getSpotBalance(asset_USDT);
      let quantity = 0;
      if (balance) {
-        utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in spot Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
+        utils.customLog(`Current ${utils.FgCyan} ${asset_USDT} ${utils.Reset} Balance in spot Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
         if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
             balance = ((parseFloat(balance) * 10) / 100);
@@ -54,7 +49,7 @@ const spotTrade = async () => {
             return;
         }
     } else {
-        utils.customLog(`→ Could not retrieve ${asset} balance. => exit;`);
+        utils.customLog(`→ Could not retrieve ${asset_USDT} balance. => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
         return;
     }
