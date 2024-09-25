@@ -79,7 +79,7 @@ const main = async () => {
         }, timmer)
     }
     spotLoop();
-
+    return;
      // Send report mail
      var sendReportMailTimmer = 1000 * 61 * 7; // 15 minutes
      function sendReportMail() {

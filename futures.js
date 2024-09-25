@@ -145,7 +145,7 @@ const futuresTrade = async (symbol, future_symbol) => {
     if (balance) {
         utils.customLog(`Current ${utils.FgCyan} ${asset} ${utils.Reset} Balance in Futures Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
-        if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
+        if (balance >= 1) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
             balance = ((parseFloat(balance) * 40) / 100) * 10;
             quantity = Number(Number(balance / currentPrice).toFixed(2));
             utils.customLog(`quantity to order: ${quantity}`);
@@ -194,7 +194,7 @@ const main = async () => {
         }, timmer)
     }
     futuresLoop();
-
+    return;
     // Send report mail
     var sendReportMailTimmer = 1000 * 62 * 45; // 16 minutes
     function sendReportMail() {
