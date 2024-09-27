@@ -282,7 +282,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
     }
 };
 
-const closeAllPositionsAndOrders = async (future_symbol) => {
+const closeAllPositionsAndOrders = async (currentAction, future_symbol) => {
     try {
         let isStop = false;
         // Bước 2: Đóng tất cả các vị thế mở
@@ -457,7 +457,7 @@ const confirmMarketStatus = async (symbol) => {
         let takeProfit = null;
         if (lastShortTermMA > lastLongTermMA
             && lastRSI > 50
-            && latestVolume > averageVolume
+            && latestVolume > (averageVolume * 0.75)
         ) {
             action = 'BUY';
             stopLoss = latestClose - (1.5 * lastATR);
@@ -473,7 +473,7 @@ const confirmMarketStatus = async (symbol) => {
         utils.customLog(`lastRSI: ${lastRSI}, (> 50 => BUY(${utils.FgYellow}${lastRSI > 50}${utils.Reset}), SELL(${utils.FgYellow}${lastRSI < 50 && lastRSI > 30}${utils.Reset}))`);
         utils.customLog(`lastest volume: ${latestVolume},averageVolume: ${averageVolume} (lastest > averageVolume(${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset}))`);
         utils.customLog(`→　New suggest action: ${utils.FgYellow}${action}${utils.Reset}`);
-        return { action, stopLoss, takeProfit };
+        return { action, stopLoss, takeProfit, lastRSI };
     } catch (error) {
         console.error('Error closing positions:', error);
         return null;

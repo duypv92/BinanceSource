@@ -2,12 +2,16 @@ var common_func = require('./common.js');
 var spot_common_func = require('./spot-common.js');
 var utils = require('./utils.js');
 
-const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
-const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
-const asset_USDT = 'USDT';
-const asset = 'PEPE'; // SUI
+// const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
+// const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
 
-const spotTrade = async () => {
+const symbol_arr = ['BTCUSDT', 'PEPEUSDT', 'SUIUSDT']; // ['SUIUSDT']; // 
+const future_symbol_arr = ['BTCUSDT', '1000PEPEUSDT', 'SUIUSDT']; // ['SUIUSDT']; //
+const asset_arr = ['BTC', 'PEPE', 'SUI']// 'PEPE'; // SUI
+const asset_USDT = 'USDT';
+
+
+const spotTrade = async (symbol, future_symbol, asset) => {
     utils.customLog('\n');
     var currentdate = new Date();
     var currentPrice = await common_func.getPrice(symbol);
@@ -34,10 +38,10 @@ const spotTrade = async () => {
     }
 
     utils.customLog(`→${utils.BgMagenta}Start new order${utils.Reset}`);
-     // get balance spot
-     var balance = await spot_common_func.getSpotBalance(asset_USDT);
-     let quantity = 0;
-     if (balance) {
+    // get balance spot
+    var balance = await spot_common_func.getSpotBalance(asset_USDT);
+    let quantity = 0;
+    if (balance) {
         utils.customLog(`Current ${utils.FgCyan} ${asset_USDT} ${utils.Reset} Balance in spot Wallet: ${utils.FgCyan} ${balance} ${utils.Reset}`);
         // Nếu số dư đủ, thực hiện lệnh Long/Short
         if (balance >= 2) { // Đảm bảo rằng bạn có ít nhất 5 USDT (hoặc giá trị tương ứng) để giao dịch
@@ -64,31 +68,40 @@ const sendReport = async () => {
     await utils.sendAnotherMail('test');
 }
 
+const spotTradeAll = async () => {
+    for (let index = 0; index < symbol_arr.length; index++) {
+        const coinCode = symbol_arr[index];
+        const coinSpotCode = future_symbol_arr[index];
+        const asset = asset_arr[index];
+        await spotTrade(coinCode, coinSpotCode, asset);
+    }
+}
+
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 61 * 7; // 15 minutes
+    var timmer = 1000 * 61 * 4; // 15 minutes
     // var timmer = 1000 * 5; // 15 minutes
-    spotTrade();
+    spotTradeAll();
     function spotLoop() {
         console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
         setTimeout(function () {
-            spotTrade();
+            spotTradeAll();
             i++;
             spotLoop();
         }, timmer)
     }
     spotLoop();
     return;
-     // Send report mail
-     var sendReportMailTimmer = 1000 * 61 * 7; // 15 minutes
-     function sendReportMail() {
-         setTimeout(function () {
-             sendReport();
-             sendReportMail();
-         }, sendReportMailTimmer)
-     }
-     sendReportMail();
+    // Send report mail
+    var sendReportMailTimmer = 1000 * 61 * 7; // 15 minutes
+    function sendReportMail() {
+        setTimeout(function () {
+            sendReport();
+            sendReportMail();
+        }, sendReportMailTimmer)
+    }
+    sendReportMail();
 };
 
 main();

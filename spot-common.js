@@ -87,7 +87,7 @@ const closeAllSpotOrders = async (symbol, currentAction, currentPrice, asset, fu
 
         utils.customLog(`${utils.BgMagenta}Check profit/loss of current order ${utils.Reset}`);
         let profitLoss = await checkProfitLoss(lastestSpot, currentPrice);
-
+        return isStop;
         if (currentAction == 'SELL') {
             isStop = true;
             utils.customLog(`${utils.FgRed} New suggest action is SELL => Stop as soon as posible${utils.Reset}`);
@@ -141,7 +141,7 @@ const getLatestSpotOrder = async (symbol) => {
         if (orders && orders.length > 0) {
             latestOrder = orders[0];  // Lấy lệnh gần nhất từ danh sách
         } else {
-            console.log('No orders found.');
+            utils.customLog('No orders found.');
         }
         if (latestOrder != null && latestOrder.price != 0.00000000) {
             return latestOrder;
@@ -155,7 +155,7 @@ const getLatestSpotOrder = async (symbol) => {
                 latestOrder = buyTrades[0];  // Lấy lệnh gần nhất từ danh sách
                 return latestOrder;
             } else {
-                console.log('No Buy trades found.');
+                utils.customLog('No Buy trades found.');
             }
         }
         return latestOrder;
@@ -256,7 +256,7 @@ const determineTrendAndSignal = async (symbol) => {
     }
     // utils.customLog(`lastShortTermMA: ${lastShortTermMA}, lastLongTermMA: ${lastLongTermMA} (Short>Long=>BUY(${utils.FgYellow}${lastShortTermMA > lastLongTermMA}${utils.Reset}))`);
     // utils.customLog(`Latest RSI: ${latestRSI} (>50=> ${utils.FgYellow}${latestRSI > 50}${utils.Reset})`);
-    // utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
+    utils.customLog(`Volume: ${latestVolume}, Average Volume: ${averageVolume} (Lastest Volume > Average => ${utils.FgYellow}${latestVolume > averageVolume}${utils.Reset})`);
     // utils.customLog(`OR....`);
     utils.customLog(`Latest MACD: ${latestMACD.MACD}, signal: ${latestMACD.signal} (MACD > signal=>BUY(${utils.FgYellow}${latestMACD.MACD > latestMACD.signal}${utils.Reset}))`, true);
     utils.customLog(`latestRSI: ${latestRSI}(<30=> BUY(${utils.FgYellow}${latestRSI < 30}${utils.Reset}))`, true);
@@ -409,7 +409,7 @@ const checkProfitLoss = async (lastestSpot, _currentPrice) => {
         const profitLoss = calculateProfitLoss(buyPrice, currentPrice, quantity);
 
         utils.customLog(`Bought Price/Current Price: ${buyPrice}/${currentPrice}`);
-        utils.customLog(`Profit/Loss: ${profitLoss}`);
+        utils.customLog(`Profit/Loss: ${utils.FgBlue}${profitLoss}${utils.Reset}`);
 
         if (profitLoss > 0) {
             utils.customLog('The position is in profit.');

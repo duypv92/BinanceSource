@@ -4,8 +4,8 @@ const { SMA, RSI, ATR } = require('technicalindicators');
 var common_func = require('./common.js');
 var utils = require('./utils');
 
-const symbol_arr = ['PEPEUSDT', 'SUIUSDT'];
-const future_symbol_arr = ['1000PEPEUSDT', 'SUIUSDT'];
+const symbol_arr = ['PEPEUSDT', 'SUIUSDT']; // ['SUIUSDT']; // 
+const future_symbol_arr = ['1000PEPEUSDT', 'SUIUSDT']; // ['SUIUSDT']; //
 
 // const symbol = 'PEPEUSDT' //'BTCUSDT' SUIUSDT; PEPEUSDT // Replace with the symbol of the coin you want to check
 // const future_symbol = '1000PEPEUSDT' //'BTCUSDT' SUIUSDT; 1000PEPEUSDT //
@@ -50,7 +50,7 @@ const futuresTrade = async (symbol, future_symbol) => {
 
     // Close All Positions And Orders in futures
     utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in futures${utils.Reset}`);
-    let isStop = await common_func.closeAllPositionsAndOrders(future_symbol);
+    let isStop = await common_func.closeAllPositionsAndOrders(marketStatus.action, future_symbol);
     if (!isStop) {
         utils.customLog("→ Stop renew futures requests => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -91,24 +91,63 @@ const futuresTrade = async (symbol, future_symbol) => {
     } else {
         let isOut = false;
         let holdTimes = 0;
+        let consistentTimes = 0;
 
         let _action = null;
+        let _lastRSI = null;
         for (let index = 0; index < marketHistory[symbol].length; index++) {
             const element = marketHistory[symbol][index];
             let currentAction = element.action;
+            const lastRSI = element.lastRSI;
             if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
                 isOut = true;
                 utils.customLog(`Inconsistent action → Out`);
                 break;
             } else {
+                if (_lastRSI != null) {
+                    if (currentAction == "SELL") {
+                        utils.customLog(`lastRSI <= _lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
+                        if (lastRSI > _lastRSI) {
+                        } else {
+                            consistentTimes += 1;
+                        }
+                    } else if (currentAction == "BUY") {
+                        utils.customLog(`lastRSI >= _lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
+                        if (lastRSI < _lastRSI) {
+                        } else {
+                            consistentTimes += 1;
+                        }
+                    }
+                }
                 if (currentAction == "HOLD") {
                     holdTimes += 1;
+                    if (_lastRSI != null) {
+                        if (_action == "SELL") {
+                            utils.customLog(`HOLD lastRSI <= _lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
+                            if (lastRSI > _lastRSI) {
+                            } else {
+                                consistentTimes += 1;
+                            }
+                        } else if (_action == "BUY") {
+                            utils.customLog(`HOLD lastRSI >= _lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
+                            if (lastRSI < _lastRSI) {
+                            } else {
+                                consistentTimes += 1;
+                            }
+                        }
+                    }
                 }
+                // console.log('consistentTimes: ' + consistentTimes)
                 _action = currentAction;
+                _lastRSI = lastRSI;
             }
         }
         if (isOut || holdTimes > 2) {
-            utils.customLog(`→ Action has no continuity => exit;`);
+            utils.customLog(`→ Action ${utils.FgYellow}has no continuity${utils.Reset} => exit;`);
+            utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+            return;
+        } else if (consistentTimes < 2) {
+            utils.customLog(`→ LastRSI is ${utils.FgYellow}Inconsistent${utils.Reset} => exit;`);
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
             return;
         } else {
