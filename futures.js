@@ -84,6 +84,7 @@ const futuresTrade = async (symbol, future_symbol) => {
 
     // Check market history
     utils.customLog(`${utils.BgMagenta}Check continuity of new futures action...${utils.Reset}`);
+    let consistentTimes = 0;
     if (marketHistory[symbol].length < 4) {
         utils.customLog(`→ Not enough number of time of action => exit;`);
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -91,7 +92,6 @@ const futuresTrade = async (symbol, future_symbol) => {
     } else {
         let isOut = false;
         let holdTimes = 0;
-        let consistentTimes = 0;
 
         let _action = null;
         let _lastRSI = null;
@@ -137,7 +137,6 @@ const futuresTrade = async (symbol, future_symbol) => {
                         }
                     }
                 }
-                // console.log('consistentTimes: ' + consistentTimes)
                 _action = currentAction;
                 _lastRSI = lastRSI;
             }
@@ -172,9 +171,14 @@ const futuresTrade = async (symbol, future_symbol) => {
     utils.customLog(`New suggest action: ${utils.FgYellow}${marketStatus.action}${utils.Reset}`);
     utils.customLog(`Trend Reversalaction: ${utils.FgYellow}${trendAction}${utils.Reset}`);
     if (trendAction != marketStatus.action && trendAction != "HOLD") {
-        utils.customLog(`${utils.FgYellow}→ The Trend action is not same with new suggest action => exit;${utils.Reset}`);
-        utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
-        return;
+        utils.customLog(`${utils.FgYellow}→ The Trend action is not same with new suggest action => check consistentTimes;${utils.Reset}`);
+        if (consistentTimes > 2) {
+            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${utils.consistentTimes} => continue; ${utils.Reset}`);
+        } else {
+            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${utils.consistentTimes} => exits; ${utils.Reset}`);
+            utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
+            return;
+        }
     }
 
     utils.customLog(`→${utils.BgMagenta}Start order new position${utils.Reset}`);
