@@ -193,7 +193,7 @@ const detectSuddenMove = async (symbol) => {
 
 // Xác định xu hướng tăng hay giảm
 const determineTrendAndSignal = async (symbol) => {
-    const data = await common_func.getHistoricalDataCustom(symbol, '15m');
+    const data = await common_func.getHistoricalDataCustom(symbol, '15m', 300);
 
     if (data.length < 26) {
         console.error('Not enough data to make a decision.');

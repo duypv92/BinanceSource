@@ -106,13 +106,13 @@ const futuresTrade = async (symbol, future_symbol) => {
             } else {
                 if (_lastRSI != null) {
                     if (currentAction == "SELL") {
-                        utils.customLog(`lastRSI <= _lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
+                        utils.customLog(`lastRSI <= old_lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
                         if (lastRSI > _lastRSI) {
                         } else {
                             consistentTimes += 1;
                         }
                     } else if (currentAction == "BUY") {
-                        utils.customLog(`lastRSI >= _lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
+                        utils.customLog(`lastRSI >= old_lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
                         if (lastRSI < _lastRSI) {
                         } else {
                             consistentTimes += 1;
@@ -123,13 +123,13 @@ const futuresTrade = async (symbol, future_symbol) => {
                     holdTimes += 1;
                     if (_lastRSI != null) {
                         if (_action == "SELL") {
-                            utils.customLog(`HOLD lastRSI <= _lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
+                            utils.customLog(`HOLD lastRSI <= old_lastRSI(${lastRSI < _lastRSI || lastRSI == _lastRSI})`);
                             if (lastRSI > _lastRSI) {
                             } else {
                                 consistentTimes += 1;
                             }
                         } else if (_action == "BUY") {
-                            utils.customLog(`HOLD lastRSI >= _lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
+                            utils.customLog(`HOLD lastRSI >= old_lastRSI(${lastRSI > _lastRSI || lastRSI == _lastRSI})`);
                             if (lastRSI < _lastRSI) {
                             } else {
                                 consistentTimes += 1;
@@ -173,9 +173,9 @@ const futuresTrade = async (symbol, future_symbol) => {
     if (trendAction != marketStatus.action && trendAction != "HOLD") {
         utils.customLog(`${utils.FgYellow}→ The Trend action is not same with new suggest action => check consistentTimes;${utils.Reset}`);
         if (consistentTimes > 2) {
-            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${utils.consistentTimes} => continue; ${utils.Reset}`);
+            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${consistentTimes} => continue; ${utils.Reset}`);
         } else {
-            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${utils.consistentTimes} => exits; ${utils.Reset}`);
+            utils.customLog(`${utils.FgYellow}→ The consistentTimes is ${consistentTimes} => exits; ${utils.Reset}`);
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
             return;
         }
