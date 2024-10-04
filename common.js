@@ -321,18 +321,18 @@ const closeAllPositionsAndOrders = async (currentAction, future_symbol) => {
                     utils.customLog(`${utils.FgGreen}Unrealized PnL:${utils.Reset} ${unrealizedProfit.toFixed(2)} USD`);
                     utils.customLog(`Closing Fee: ${closingFee} USD`);
                     utils.customLog(`PnL after Fees: ${pnlAfterFees.toFixed(2)} USD`);
-                    // utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
-                    // if (parseFloat(positionAmt) > 0) {
-                    //     if (currentAction == 'SELL') {
-                    //         isStop = true;
-                    //         utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
-                    //     }
-                    // } else {
-                    //     if (currentAction == 'BUY') {
-                    //         isStop = true;
-                    //         utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
-                    //     }
-                    // }
+                    utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
+                    if (parseFloat(positionAmt) > 0) {
+                        if (currentAction == 'SELL') {
+                            isStop = true;
+                            utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
+                        }
+                    } else {
+                        if (currentAction == 'BUY') {
+                            isStop = true;
+                            utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
+                        }
+                    }
                     if (isStop == false) {
                         if (unrealizedProfit < 0) {
                             utils.customLog('→ Are losing money');
@@ -558,23 +558,23 @@ const monitorMarketAndAdjustStopLoss = async (symbol, _position) => {
 
         utils.customLog(`Latest ADX: ${latestADX.adx},Latest/Average Volume: ${latestVolume}/${averageVolume[averageVolume.length - 1]} (if ADX > 25)`);
 
-        // Điều chỉnh Stop Loss dựa trên vị thế
-        if (latestADX.adx > 25 && latestVolume > averageVolume[averageVolume.length - 1]) {
-            utils.customLog('Strong trend detected. Adjusting Stop Loss.');
+        // // Điều chỉnh Stop Loss dựa trên vị thế
+        // if (latestADX.adx > 25 && latestVolume > averageVolume[averageVolume.length - 1]) {
+        //     utils.customLog('Strong trend detected. Adjusting Stop Loss.');
 
-            if (position === 'BUY') {
-                // Nếu đang ở vị thế BUY, stop loss phải thấp hơn giá hiện tại
-                stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
-            } else if (position === 'SELL') {
-                // Nếu đang ở vị thế SELL, stop loss phải cao hơn giá hiện tại
-                stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
-            }
-            utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
-        }
-        // in case stopLoss is still null, continue use other method to check. 
-        if (stopLoss != null) {
-            return stopLoss;
-        }
+        //     if (position === 'BUY') {
+        //         // Nếu đang ở vị thế BUY, stop loss phải thấp hơn giá hiện tại
+        //         stopLoss = latestClose - (latestClose * 0.005); // 0.5% thấp hơn giá hiện tại
+        //     } else if (position === 'SELL') {
+        //         // Nếu đang ở vị thế SELL, stop loss phải cao hơn giá hiện tại
+        //         stopLoss = latestClose + (latestClose * 0.005); // 0.5% cao hơn giá hiện tại
+        //     }
+        //     utils.customLog(`${utils.FgRed} Adjusted new stop Loss for ${position}: ${stopLoss}`);
+        // }
+        // // in case stopLoss is still null, continue use other method to check. 
+        // if (stopLoss != null) {
+        //     return stopLoss;
+        // }
         // Continue Apply RSI, MACD for check markets
         // Tính RSI
         const rsiValues = RSI.calculate({

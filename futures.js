@@ -73,10 +73,9 @@ const futuresTrade = async (symbol, future_symbol) => {
         let lastestTime = new Date(lastClosedTrade.time);
         let diffMs = currentdate - lastestTime;
         let diffMins = diffMs / 60000; // minutes
-        if (diffMins >= 31) {
-            // utils.customLog("The Lastest trade is lose but time > 30 minutes => continue;");
+        if (diffMins > 15) {
         } else {
-            utils.customLog("The Lastest trade is lose and not enough 30 minutes => exit;");
+            utils.customLog("The Lastest trade is lose and not enough 15 minutes => exit;");
             utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
             return;
         }
