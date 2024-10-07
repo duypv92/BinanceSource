@@ -282,7 +282,7 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
     }
 };
 
-const closeAllPositionsAndOrders = async (currentAction, future_symbol) => {
+const closeAllPositionsAndOrders = async (currentAction, future_symbol, consistentTimesRes) => {
     try {
         let isStop = false;
         // Bước 2: Đóng tất cả các vị thế mở
@@ -324,13 +324,23 @@ const closeAllPositionsAndOrders = async (currentAction, future_symbol) => {
                     utils.customLog(`PnL Percentage after Fees: ${pnlPercentageAfterFees.toFixed(2)}%`);
                     if (parseFloat(positionAmt) > 0) {
                         if (currentAction == 'SELL') {
-                            isStop = true;
-                            utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Stop loss as soon as posible${utils.Reset}`);
+                            utils.customLog(`${utils.FgRed} Current position is BUY but new position is SELL => Check consistent Times${utils.Reset}`);
+                            if (consistentTimesRes > 2) {
+                                isStop = true;
+                                utils.customLog(`${utils.FgRed}ConsistentTimes is ${consistentTimesRes} => Stop loss as soon as posible${utils.Reset}`);
+                            } else {
+                                utils.customLog(`${utils.FgYellow}ConsistentTimes is ${consistentTimesRes} => Continue;${utils.Reset}`);
+                            }
                         }
                     } else {
                         if (currentAction == 'BUY') {
-                            isStop = true;
-                            utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Stop loss as soon as posible${utils.Reset}`);
+                            utils.customLog(`${utils.FgRed} Current position is SELL but new position is BUY => Check consistent Times${utils.Reset}`);
+                            if (consistentTimesRes > 2) {
+                                isStop = true;
+                                utils.customLog(`${utils.FgRed}ConsistentTimes is ${consistentTimesRes} => Stop loss as soon as posible${utils.Reset}`);
+                            } else {
+                                utils.customLog(`${utils.FgYellow}ConsistentTimes is ${consistentTimesRes} => Continue;${utils.Reset}`);
+                            }
                         }
                     }
                     if (isStop == false) {

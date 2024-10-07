@@ -50,7 +50,8 @@ const futuresTrade = async (symbol, future_symbol) => {
 
     // Close All Positions And Orders in futures
     utils.customLog(`${utils.BgMagenta}Close All Positions And Orders in futures${utils.Reset}`);
-    let isStop = await common_func.closeAllPositionsAndOrders(marketStatus.action, future_symbol);
+    let consistentTimesRes = await checkMarketContinue(marketHistory, symbol);
+    let isStop = await common_func.closeAllPositionsAndOrders(marketStatus.action, future_symbol, consistentTimesRes);
     if (!isStop) {
         utils.customLog("→ Stop renew futures requests => exit;");
         utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
@@ -207,6 +208,57 @@ const futuresTrade = async (symbol, future_symbol) => {
     utils.customLog(`${utils.FgGreen}-----------**************END***************-----------${utils.Reset}`);
 }
 
+const checkMarketContinue = async (marketHistory, symbol) => {
+    // Check market history
+    let consistentTimes = 0;
+    if (marketHistory[symbol].length < 4) {
+        return consistentTimes;
+    } else {
+        let _action = null;
+        let _lastRSI = null;
+        for (let index = 0; index < marketHistory[symbol].length; index++) {
+            const element = marketHistory[symbol][index];
+            let currentAction = element.action;
+            const lastRSI = element.lastRSI;
+            if (_action != null && _action != currentAction && currentAction != "HOLD" && _action != "HOLD") {
+                break;
+            } else {
+                if (_lastRSI != null) {
+                    if (currentAction == "SELL") {
+                        if (lastRSI > _lastRSI) {
+                        } else {
+                            consistentTimes += 1;
+                        }
+                    } else if (currentAction == "BUY") {
+                        if (lastRSI < _lastRSI) {
+                        } else {
+                            consistentTimes += 1;
+                        }
+                    }
+                }
+                if (currentAction == "HOLD") {
+                    if (_lastRSI != null) {
+                        if (_action == "SELL") {
+                            if (lastRSI > _lastRSI) {
+                            } else {
+                                consistentTimes += 1;
+                            }
+                        } else if (_action == "BUY") {
+                            if (lastRSI < _lastRSI) {
+                            } else {
+                                consistentTimes += 1;
+                            }
+                        }
+                    }
+                }
+                _action = currentAction;
+                _lastRSI = lastRSI;
+            }
+        }
+        return consistentTimes;
+    }
+}
+
 const sendReport = async () => {
     await utils.sendMail('test');
 }
@@ -225,7 +277,7 @@ const futuresTradeAll = async () => {
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 60 * 4; // 15 minutes
+    var timmer = 1000 * 61 * 3; // 15 minutes
     futuresTradeAll();
     function futuresLoop() {
         console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
