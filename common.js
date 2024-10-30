@@ -253,18 +253,18 @@ const futuresOrder = async (symbol, side, quantity, stopLoss, takeProfit, curren
         utils.customLog(`${side} Order Placed: id: ${order.orderId}, time: ${order.updateTime}`);
         // console.log(`${side} Order Placed:`, order);
 
-        // // Đặt lệnh Stop Loss và Take Profit nếu cần
-        // if (roundedStopLoss) {
-        //     const stopOrder = await client.futuresOrder({
-        //         symbol: symbol,
-        //         side: side === 'BUY' ? 'SELL' : 'BUY', // Đặt ngược lại với lệnh ban đầu
-        //         type: 'STOP_MARKET',
-        //         stopPrice: roundedStopLoss,
-        //         quantity: roundedQuantity
-        //     });
-        //     utils.customLog(`Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}`);
-        //     // console.log('Stop Loss Order Placed:', stopOrder);
-        // }
+        // Đặt lệnh Stop Loss và Take Profit nếu cần
+        if (roundedStopLoss) {
+            const stopOrder = await client.futuresOrder({
+                symbol: symbol,
+                side: side === 'BUY' ? 'SELL' : 'BUY', // Đặt ngược lại với lệnh ban đầu
+                type: 'STOP_MARKET',
+                stopPrice: roundedStopLoss,
+                quantity: roundedQuantity
+            });
+            utils.customLog(`Stop Loss Order Placed: id: ${stopOrder.orderId}, time: ${stopOrder.updateTime}`);
+            // console.log('Stop Loss Order Placed:', stopOrder);
+        }
 
         if (roundedTakeProfit) {
             const takeProfitOrder = await client.futuresOrder({

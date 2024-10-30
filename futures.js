@@ -277,7 +277,7 @@ const futuresTradeAll = async () => {
 // Example usage
 const main = async () => {
     var i = 1;
-    var timmer = 1000 * 61 * 3; // 15 minutes
+    var timmer = 1000 * 61 * 10; // 15 minutes
     futuresTradeAll();
     function futuresLoop() {
         console.log(`${utils.FgMagenta} ■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●■◆●`);
